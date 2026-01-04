@@ -15,5 +15,3 @@ yarn.lock
 # OS files
 .DS_Store
 
-# Local OpenCode config (for testing)
-.opencode/
