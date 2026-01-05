@@ -6,9 +6,7 @@ import type { BrainstormInput, BrainstormOutput, BrainstormAnswer } from "./type
 import { BrainstormError } from "./types";
 import { callProbe } from "./probe";
 import { callSummarize } from "./summarize";
-
-const DEFAULT_MAX_QUESTIONS = 15;
-const DEFAULT_MODEL = "anthropic/claude-sonnet-4";
+import { DEFAULT_MAX_QUESTIONS, DEFAULT_PROBE_MODEL, DEFAULT_ANSWER_TIMEOUT_MS } from "../../constants";
 
 export class BrainstormOrchestrator {
   private sessionManager: SessionManager;
@@ -37,7 +35,7 @@ export class BrainstormOrchestrator {
   async run(input: BrainstormInput): Promise<BrainstormOutput> {
     const { context, request, initial_questions, max_questions, model } = input;
     const maxQ = max_questions ?? DEFAULT_MAX_QUESTIONS;
-    const llmModel = model ?? DEFAULT_MODEL;
+    const llmModel = model ?? DEFAULT_PROBE_MODEL;
 
     // Validate input
     if (!initial_questions || initial_questions.length === 0) {
@@ -75,7 +73,7 @@ export class BrainstormOrchestrator {
         const answerResult = await this.sessionManager.getNextAnswer({
           session_id: brainstormSessionId,
           block: true,
-          timeout: 300000, // 5 minutes
+          timeout: DEFAULT_ANSWER_TIMEOUT_MS,
         });
 
         // Handle timeout or no pending questions
