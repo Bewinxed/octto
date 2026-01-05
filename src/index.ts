@@ -5,29 +5,6 @@ import { SessionManager } from "./session/manager";
 import { createBrainstormerTools } from "./tools";
 import { agents } from "./agents";
 
-// Keywords that trigger brainstormer agent
-const BRAINSTORM_KEYWORDS = [
-  "brainstorm",
-  "help me design",
-  "help me think",
-  "let's design",
-  "design a",
-  "improvements to",
-  "improve the",
-  "refine this idea",
-  "flesh out",
-  "think through",
-  "architect",
-  "what should",
-  "how should i build",
-  "help me plan",
-];
-
-function shouldTriggerBrainstormer(text: string): boolean {
-  const lowerText = text.toLowerCase();
-  return BRAINSTORM_KEYWORDS.some((keyword) => lowerText.includes(keyword));
-}
-
 const BrainstormerPlugin: Plugin = async (ctx) => {
   // Create session manager
   const sessionManager = new SessionManager();
@@ -96,35 +73,6 @@ const BrainstormerPlugin: Plugin = async (ctx) => {
       }
     },
 
-    "chat.message": async (input, output) => {
-      // Check if any text part contains brainstorming keywords
-      const hasBrainstormKeyword = output.parts.some((p) => {
-        if (p.type === "text" && "text" in p) {
-          return shouldTriggerBrainstormer((p as { text: string }).text);
-        }
-        return false;
-      });
-
-      if (hasBrainstormKeyword) {
-        // Get message info for required fields
-        const messageInfo = output.message as { id?: string; sessionID?: string };
-        const sessionID = input.sessionID || messageInfo.sessionID || "";
-        const messageID = messageInfo.id || "";
-
-        if (!sessionID || !messageID) {
-          return; // Can't create valid part without these
-        }
-
-        // Inject an agent part to trigger the brainstormer
-        output.parts.push({
-          id: `part_brainstorm_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          sessionID,
-          messageID,
-          type: "agent",
-          name: "brainstormer",
-        } as unknown as (typeof output.parts)[number]);
-      }
-    },
   };
 };
 
