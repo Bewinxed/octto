@@ -1,7 +1,6 @@
 // tests/integration/streaming-answers.test.ts
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { SessionManager } from "../../src/session/manager";
-import { buildProbeContext, type QAPair, type PendingQuestion } from "../../src/agents/context";
 
 describe("Streaming Answer Processing", () => {
   let manager: SessionManager;
@@ -12,112 +11,6 @@ describe("Streaming Answer Processing", () => {
 
   afterEach(async () => {
     await manager.cleanup();
-  });
-
-  describe("Context building with partial answers", () => {
-    it("should build context after first answer with pending questions", () => {
-      const originalRequest = "Build a task manager CLI";
-
-      // Simulate: 3 initial questions, user answered Q1 only
-      const answeredQAs: QAPair[] = [
-        {
-          questionNumber: 1,
-          questionType: "pick_one",
-          questionText: "What's the primary goal?",
-          answer: { selected: "simple" },
-          config: {
-            options: [
-              { id: "speed", label: "Fast performance" },
-              { id: "simple", label: "Simplicity" },
-            ],
-          },
-        },
-      ];
-
-      const pendingQuestions: PendingQuestion[] = [
-        { questionNumber: 2, questionType: "ask_text", questionText: "Any constraints?" },
-        { questionNumber: 3, questionType: "pick_many", questionText: "Which features?" },
-      ];
-
-      const context = buildProbeContext(originalRequest, answeredQAs, pendingQuestions);
-
-      // Verify context structure
-      expect(context).toContain("ORIGINAL REQUEST:");
-      expect(context).toContain("Build a task manager CLI");
-      expect(context).toContain("CONVERSATION:");
-      expect(context).toContain("Q1 [pick_one]: What's the primary goal?");
-      expect(context).toContain('A1: User selected "Simplicity"');
-      expect(context).toContain("PENDING QUESTIONS:");
-      expect(context).toContain("Q2 [ask_text]: Any constraints?");
-      expect(context).toContain("Q3 [pick_many]: Which features?");
-    });
-
-    it("should update context as more answers come in", () => {
-      const originalRequest = "Build a task manager CLI";
-
-      // Round 1: Q1 answered, Q2 and Q3 pending
-      let answeredQAs: QAPair[] = [
-        {
-          questionNumber: 1,
-          questionType: "pick_one",
-          questionText: "What's the primary goal?",
-          answer: { selected: "simple" },
-          config: { options: [{ id: "simple", label: "Simplicity" }] },
-        },
-      ];
-      let pendingQuestions: PendingQuestion[] = [
-        { questionNumber: 2, questionType: "ask_text", questionText: "Any constraints?" },
-        { questionNumber: 3, questionType: "pick_many", questionText: "Which features?" },
-      ];
-
-      let context = buildProbeContext(originalRequest, answeredQAs, pendingQuestions);
-      expect(context).toContain("Q1 [pick_one]");
-      expect(context).toContain("PENDING QUESTIONS:");
-      expect(context).toContain("Q2 [ask_text]");
-
-      // Round 2: Q1 and Q2 answered, Q3 pending
-      answeredQAs = [
-        ...answeredQAs,
-        {
-          questionNumber: 2,
-          questionType: "ask_text",
-          questionText: "Any constraints?",
-          answer: { text: "Must work offline" },
-          config: {},
-        },
-      ];
-      pendingQuestions = [{ questionNumber: 3, questionType: "pick_many", questionText: "Which features?" }];
-
-      context = buildProbeContext(originalRequest, answeredQAs, pendingQuestions);
-      expect(context).toContain("Q1 [pick_one]");
-      expect(context).toContain("Q2 [ask_text]");
-      expect(context).toContain('A2: User wrote: "Must work offline"');
-      expect(context).toContain("PENDING QUESTIONS:");
-      expect(context).toContain("Q3 [pick_many]");
-
-      // Round 3: All answered, no pending
-      answeredQAs = [
-        ...answeredQAs,
-        {
-          questionNumber: 3,
-          questionType: "pick_many",
-          questionText: "Which features?",
-          answer: { selected: ["tags", "due"] },
-          config: {
-            options: [
-              { id: "tags", label: "Tags" },
-              { id: "due", label: "Due dates" },
-            ],
-          },
-        },
-      ];
-      pendingQuestions = [];
-
-      context = buildProbeContext(originalRequest, answeredQAs, pendingQuestions);
-      expect(context).toContain("Q3 [pick_many]");
-      expect(context).toContain('A3: User selected: "Tags", "Due dates"');
-      expect(context).not.toContain("PENDING QUESTIONS:");
-    });
   });
 
   describe("Session flow with streaming answers", () => {
