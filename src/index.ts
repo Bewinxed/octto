@@ -1,5 +1,6 @@
 // src/index.ts
 import type { Plugin } from "@opencode-ai/plugin";
+import type { ToolContext } from "@opencode-ai/plugin/tool";
 import { SessionManager } from "./session/manager";
 import { createBrainstormerTools } from "./tools";
 import { agents } from "./agents";
@@ -18,14 +19,16 @@ const BrainstormerPlugin: Plugin = async (ctx) => {
   const originalStartSession = baseTools.start_session;
   const wrappedStartSession = {
     ...originalStartSession,
-    execute: async (args: any, toolCtx: any) => {
+    execute: async (args: Record<string, unknown>, toolCtx: ToolContext) => {
       // Call original execute (which has enforcement)
-      const result = await originalStartSession.execute(args, toolCtx);
+      // Cast args to match original execute signature - validated by zod schema at runtime
+      type StartSessionArgs = Parameters<typeof originalStartSession.execute>[0];
+      const result = await originalStartSession.execute(args as StartSessionArgs, toolCtx);
 
       // If successful, track the session
       const sessionIdMatch = result.match(/ses_[a-z0-9]+/);
       if (sessionIdMatch) {
-        const openCodeSessionId = toolCtx?.sessionID;
+        const openCodeSessionId = toolCtx.sessionID;
         if (openCodeSessionId) {
           if (!sessionsByOpenCodeSession.has(openCodeSessionId)) {
             sessionsByOpenCodeSession.set(openCodeSessionId, new Set());
