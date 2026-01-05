@@ -91,6 +91,47 @@ describe("StatePersistence", () => {
     });
   });
 
+  describe("session ID validation", () => {
+    it("should reject session IDs with path traversal sequences", async () => {
+      const state: BrainstormState = {
+        session_id: "../etc/passwd",
+        browser_session_id: null,
+        request: "Malicious",
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        branches: {},
+        branch_order: [],
+      };
+
+      expect(() => persistence.save(state)).toThrow("Invalid session ID: ../etc/passwd");
+    });
+
+    it("should reject session IDs with slashes", async () => {
+      await expect(persistence.load("foo/bar")).rejects.toThrow("Invalid session ID: foo/bar");
+    });
+
+    it("should reject session IDs with dots", async () => {
+      await expect(persistence.delete("session.id")).rejects.toThrow("Invalid session ID: session.id");
+    });
+
+    it("should accept valid session IDs with alphanumeric, underscore, and hyphen", async () => {
+      const state: BrainstormState = {
+        session_id: "ses_valid-123_ABC",
+        browser_session_id: null,
+        request: "Valid",
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        branches: {},
+        branch_order: [],
+      };
+
+      await persistence.save(state);
+      const loaded = await persistence.load("ses_valid-123_ABC");
+      expect(loaded).not.toBeNull();
+      expect(loaded!.session_id).toBe("ses_valid-123_ABC");
+    });
+  });
+
   describe("list", () => {
     it("should list all session IDs", async () => {
       const state1: BrainstormState = {

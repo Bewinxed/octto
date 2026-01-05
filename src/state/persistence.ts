@@ -10,7 +10,14 @@ export class StatePersistence {
     this.baseDir = baseDir;
   }
 
+  private validateSessionId(sessionId: string): void {
+    if (!/^[a-zA-Z0-9_-]+$/.test(sessionId)) {
+      throw new Error(`Invalid session ID: ${sessionId}`);
+    }
+  }
+
   private getFilePath(sessionId: string): string {
+    this.validateSessionId(sessionId);
     return join(this.baseDir, `${sessionId}.json`);
   }
 
