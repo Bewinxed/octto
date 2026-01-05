@@ -731,15 +731,12 @@ export function getHtmlBundle(): string {
       ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('Connected to brainstormer');
         ws.send(JSON.stringify({ type: 'connected' }));
         render();
       };
-      
+
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        console.log('Received:', msg);
-        
         if (msg.type === 'question') {
           questions.push(msg);
           render();
@@ -753,7 +750,6 @@ export function getHtmlBundle(): string {
       };
       
       ws.onclose = () => {
-        console.log('Disconnected, reconnecting in 2s...');
         setTimeout(connect, 2000);
       };
     }

@@ -71,9 +71,6 @@ export class BrainstormOrchestrator {
       throw new BrainstormError("invalid_response", "At least one initial question is required");
     }
 
-    // Create a standalone session for internal LLM calls (probe/summarize)
-    // NOT a child session - completely independent to avoid any blocking issues
-    console.log("[brainstorm] Creating standalone session for LLM calls...");
     const llmSession = await this.client.session.create({
       body: {
         title: "Brainstorm Probe Session",
@@ -84,7 +81,6 @@ export class BrainstormOrchestrator {
     if (!llmSessionId) {
       throw new BrainstormError("llm_error", "Failed to create session for LLM calls");
     }
-    console.log("[brainstorm] LLM session created:", llmSessionId);
 
     // Start browser session with initial questions
     const sessionResult = await this.sessionManager.startSession({
@@ -113,29 +109,22 @@ export class BrainstormOrchestrator {
       let done = false;
 
       while (!done && questionCount <= maxQ) {
-        // Wait for next answer
-        console.log("[brainstorm] Waiting for next answer...");
         const answerResult = await this.sessionManager.getNextAnswer({
           session_id: brainstormSessionId,
           block: true,
           timeout: DEFAULT_ANSWER_TIMEOUT_MS,
         });
 
-        console.log("[brainstorm] Got answer result:", answerResult.status, answerResult.completed);
-
-        // Handle timeout or no pending
         if (!answerResult.completed) {
           if (answerResult.status === "timeout") {
             throw new BrainstormError("timeout", "Timed out waiting for user response");
           }
           if (answerResult.status === "none_pending") {
-            console.log("[brainstorm] No pending questions, breaking");
             break;
           }
           continue;
         }
 
-        // Record the answer
         const qInfo = questionTexts.get(answerResult.question_id!);
         if (qInfo) {
           answers.push({
@@ -143,19 +132,13 @@ export class BrainstormOrchestrator {
             type: answerResult.question_type as import("../../session/types").QuestionType,
             answer: answerResult.response,
           });
-          console.log("[brainstorm] Recorded answer:", qInfo.text);
         }
 
-        // Check max before calling probe
         if (questionCount >= maxQ) {
-          console.log("[brainstorm] Max questions reached, breaking");
           break;
         }
 
-        // Call probe to get next questions (can return 1-5)
-        console.log("[brainstorm] Calling probe...");
         const probeResult = await callProbe(this.client, llmSessionId, request, answers, llmModel);
-        console.log("[brainstorm] Probe result:", probeResult.done ? "done" : `${probeResult.questions?.length || 0} questions`);
 
         if (probeResult.done) {
           done = true;
