@@ -1,0 +1,146 @@
+// src/tools/brainstorm/orchestrator.ts
+import type { OpencodeClient } from "@opencode-ai/sdk";
+import type { SessionManager } from "../../session/manager";
+import type { QuestionConfig } from "../../session/types";
+import type { BrainstormInput, BrainstormOutput, BrainstormAnswer } from "./types";
+import { BrainstormError } from "./types";
+import { callProbe } from "./probe";
+import { callSummarize } from "./summarize";
+
+const DEFAULT_MAX_QUESTIONS = 15;
+const DEFAULT_MODEL = "anthropic/claude-sonnet-4";
+
+export class BrainstormOrchestrator {
+  private sessionManager: SessionManager;
+  private client: OpencodeClient;
+  private opencodeSessionId: string;
+
+  constructor(sessionManager: SessionManager, client: OpencodeClient, opencodeSessionId: string) {
+    this.sessionManager = sessionManager;
+    this.client = client;
+    this.opencodeSessionId = opencodeSessionId;
+  }
+
+  /**
+   * Extract question text from a question config
+   */
+  extractQuestionText(config: QuestionConfig | Record<string, unknown>): string {
+    if (typeof config === "object" && config !== null && "question" in config) {
+      return String((config as { question: unknown }).question);
+    }
+    return "";
+  }
+
+  /**
+   * Run the complete brainstorming flow
+   */
+  async run(input: BrainstormInput): Promise<BrainstormOutput> {
+    const { context, request, initial_questions, max_questions, model } = input;
+    const maxQ = max_questions ?? DEFAULT_MAX_QUESTIONS;
+    const llmModel = model ?? DEFAULT_MODEL;
+
+    // Validate input
+    if (!initial_questions || initial_questions.length === 0) {
+      throw new BrainstormError("invalid_response", "At least one initial question is required");
+    }
+
+    // Start browser session with initial questions
+    const sessionResult = await this.sessionManager.startSession({
+      title: "Brainstorming Session",
+      questions: initial_questions,
+    });
+
+    const brainstormSessionId = sessionResult.session_id;
+    const answers: BrainstormAnswer[] = [];
+
+    // Track question texts for answer collection
+    const questionTexts = new Map<string, { text: string; type: string }>();
+    for (let i = 0; i < initial_questions.length; i++) {
+      const qId = sessionResult.question_ids?.[i];
+      if (qId) {
+        questionTexts.set(qId, {
+          text: this.extractQuestionText(initial_questions[i].config),
+          type: initial_questions[i].type,
+        });
+      }
+    }
+
+    try {
+      // Main answer loop
+      let questionCount = initial_questions.length;
+      let done = false;
+
+      while (!done && questionCount <= maxQ) {
+        // Wait for next answer
+        const answerResult = await this.sessionManager.getNextAnswer({
+          session_id: brainstormSessionId,
+          block: true,
+          timeout: 300000, // 5 minutes
+        });
+
+        // Handle timeout or no pending questions
+        if (!answerResult.completed) {
+          if (answerResult.status === "timeout") {
+            throw new BrainstormError("timeout", "Timed out waiting for user response");
+          }
+          if (answerResult.status === "none_pending") {
+            // All questions answered, check if we should continue
+            break;
+          }
+          continue;
+        }
+
+        // Record the answer
+        const qInfo = questionTexts.get(answerResult.question_id!);
+        if (qInfo) {
+          answers.push({
+            question: qInfo.text,
+            type: answerResult.question_type as import("../../session/types").QuestionType,
+            answer: answerResult.response,
+          });
+        }
+
+        // Check if we've hit max questions
+        if (questionCount >= maxQ) {
+          done = true;
+          break;
+        }
+
+        // Call probe to decide next action
+        const probeResult = await callProbe(this.client, this.opencodeSessionId, request, answers, llmModel);
+
+        if (probeResult.done) {
+          done = true;
+        } else {
+          // Push the new question
+          const pushResult = this.sessionManager.pushQuestion(
+            brainstormSessionId,
+            probeResult.question.type,
+            probeResult.question.config,
+          );
+
+          questionTexts.set(pushResult.question_id, {
+            text: this.extractQuestionText(probeResult.question.config),
+            type: probeResult.question.type,
+          });
+
+          questionCount++;
+        }
+      }
+
+      // End the browser session
+      await this.sessionManager.endSession(brainstormSessionId);
+
+      // Generate summary
+      const summary = await callSummarize(this.client, this.opencodeSessionId, request, context, answers, llmModel);
+
+      return { answers, summary };
+    } catch (e) {
+      // Clean up session on error
+      await this.sessionManager.endSession(brainstormSessionId).catch(() => {});
+
+      if (e instanceof BrainstormError) throw e;
+      throw new BrainstormError("llm_error", `Brainstorming failed: ${e}`, e);
+    }
+  }
+}
