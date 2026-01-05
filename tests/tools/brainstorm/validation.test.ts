@@ -151,10 +151,21 @@ describe("validation", () => {
         expect(isPickManyAnswer({ selected: [] })).toBe(true);
       });
 
+      it("should return true for valid pick_many answer with other", () => {
+        expect(isPickManyAnswer({ selected: ["a"], other: ["custom1", "custom2"] })).toBe(true);
+        expect(isPickManyAnswer({ selected: [], other: [] })).toBe(true);
+      });
+
       it("should return false for invalid answers", () => {
         expect(isPickManyAnswer(null)).toBe(false);
         expect(isPickManyAnswer({ selected: "not-array" })).toBe(false);
         expect(isPickManyAnswer({ selected: [1, 2] })).toBe(false);
+      });
+
+      it("should return false when other is not an array of strings", () => {
+        expect(isPickManyAnswer({ selected: ["a"], other: "not-array" })).toBe(false);
+        expect(isPickManyAnswer({ selected: ["a"], other: [1, 2] })).toBe(false);
+        expect(isPickManyAnswer({ selected: ["a"], other: 123 })).toBe(false);
       });
     });
 

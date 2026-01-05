@@ -99,6 +99,11 @@ export function isPickManyAnswer(value: unknown): value is { selected: string[];
   const obj = value as Record<string, unknown>;
   if (!Array.isArray(obj.selected)) return false;
   if (!obj.selected.every((item) => typeof item === "string")) return false;
+  // Validate optional other field
+  if (obj.other !== undefined) {
+    if (!Array.isArray(obj.other)) return false;
+    if (!obj.other.every((item) => typeof item === "string")) return false;
+  }
   return true;
 }
 
