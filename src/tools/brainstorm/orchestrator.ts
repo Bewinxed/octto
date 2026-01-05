@@ -71,21 +71,20 @@ export class BrainstormOrchestrator {
       throw new BrainstormError("invalid_response", "At least one initial question is required");
     }
 
-    // Create a child session for internal LLM calls (probe/summarize)
-    // This avoids deadlock from prompting the same session that's running the tool
-    console.log("[brainstorm] Creating child session for LLM calls...");
-    const childSession = await this.client.session.create({
+    // Create a standalone session for internal LLM calls (probe/summarize)
+    // NOT a child session - completely independent to avoid any blocking issues
+    console.log("[brainstorm] Creating standalone session for LLM calls...");
+    const llmSession = await this.client.session.create({
       body: {
-        parentID: this.opencodeSessionId,
-        title: "Brainstorm LLM Session",
+        title: "Brainstorm Probe Session",
       },
     });
 
-    const llmSessionId = childSession.data?.id;
+    const llmSessionId = llmSession.data?.id;
     if (!llmSessionId) {
-      throw new BrainstormError("llm_error", "Failed to create child session for LLM calls");
+      throw new BrainstormError("llm_error", "Failed to create session for LLM calls");
     }
-    console.log("[brainstorm] Child session created:", llmSessionId);
+    console.log("[brainstorm] LLM session created:", llmSessionId);
 
     // Start browser session with initial questions
     const sessionResult = await this.sessionManager.startSession({
