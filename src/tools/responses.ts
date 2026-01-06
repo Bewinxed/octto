@@ -3,7 +3,9 @@ import { tool } from "@opencode-ai/plugin/tool";
 
 import type { SessionStore } from "@/session";
 
-export function createResponseTools(sessions: SessionStore) {
+import type { OcttoTools } from "./types";
+
+export function createResponseTools(sessions: SessionStore): OcttoTools {
   const get_answer = tool({
     description: `Get the answer to a SPECIFIC question.
 By default returns immediately with current status.

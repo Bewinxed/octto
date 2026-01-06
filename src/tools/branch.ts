@@ -3,7 +3,9 @@ import { tool } from "@opencode-ai/plugin/tool";
 
 import type { QuestionConfig, QuestionType, SessionStore } from "@/session";
 import type { StateStore } from "@/state";
+
 import { evaluateBranch } from "./probe-logic";
+import type { OcttoTools } from "./types";
 
 function generateId(prefix: string): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -14,7 +16,7 @@ function generateId(prefix: string): string {
   return result;
 }
 
-export function createBranchTools(stateStore: StateStore, sessions: SessionStore) {
+export function createBranchTools(stateStore: StateStore, sessions: SessionStore): OcttoTools {
   const create_brainstorm = tool({
     description: "Create a new brainstorm session with exploration branches",
     args: {

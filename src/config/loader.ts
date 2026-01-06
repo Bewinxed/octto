@@ -3,10 +3,11 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import type { AgentConfig } from "@opencode-ai/sdk";
+import * as v from "valibot";
 
 import type { AGENTS } from "@/agents";
+
 import { type OcttoConfig, OcttoConfigSchema } from "./schema";
-import * as v from "valibot";
 
 export type { AgentOverride, OcttoConfig } from "./schema";
 

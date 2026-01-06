@@ -2,9 +2,11 @@
 import { tool } from "@opencode-ai/plugin/tool";
 
 import type { SessionStore } from "@/session";
-import type { ConfirmConfig, PickManyConfig, PickOneConfig, RankConfig, RateConfig } from "../types";
 
-export function createQuestionTools(sessions: SessionStore) {
+import type { ConfirmConfig, PickManyConfig, PickOneConfig, RankConfig, RateConfig } from "../types";
+import type { OcttoTools } from "./types";
+
+export function createQuestionTools(sessions: SessionStore): OcttoTools {
   const pick_one = tool({
     description: `Ask user to select ONE option from a list.
 Returns immediately with question_id. Use get_answer to retrieve response.

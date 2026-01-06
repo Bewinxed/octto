@@ -3,7 +3,9 @@ import { tool } from "@opencode-ai/plugin/tool";
 
 import type { QuestionConfig, QuestionType, SessionStore } from "@/session";
 
-export function createSessionTools(sessions: SessionStore) {
+import type { OcttoTools } from "./types";
+
+export function createSessionTools(sessions: SessionStore): OcttoTools {
   const start_session = tool({
     description: `Start an interactive octto session with initial questions.
 Opens a browser window with questions already displayed - no waiting.

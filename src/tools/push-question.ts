@@ -3,7 +3,9 @@ import { tool } from "@opencode-ai/plugin/tool";
 
 import type { QuestionConfig, QuestionType, SessionStore } from "@/session";
 
-export function createPushQuestionTool(sessions: SessionStore) {
+import type { OcttoTools } from "./types";
+
+export function createPushQuestionTool(sessions: SessionStore): OcttoTools {
   const push_question = tool({
     description: `Push a question to the session queue. This is the generic tool for adding any question type.
 The question will appear in the browser for the user to answer.`,
