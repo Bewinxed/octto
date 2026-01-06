@@ -1,7 +1,6 @@
 // src/tools/session.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { SessionManager } from "../session/manager";
-import type { QuestionType, QuestionConfig } from "../session/types";
+import type { SessionManager, QuestionType, QuestionConfig } from "@session";
 
 export function createSessionTools(manager: SessionManager) {
   const start_session = tool({

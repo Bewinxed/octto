@@ -1,6 +1,6 @@
 // src/tools/responses.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { SessionManager } from "../session/manager";
+import type { SessionManager } from "@session";
 
 export function createResponseTools(manager: SessionManager) {
   const get_answer = tool({

@@ -1,8 +1,8 @@
 // src/tools/probe-logic.ts
 // Inline probe logic - evaluates branch context and decides next action
 
-import type { Branch } from "../state/types";
-import type { QuestionConfig } from "../session/types";
+import type { Branch } from "@state";
+import type { QuestionConfig } from "@session";
 
 export interface ProbeResult {
   done: boolean;

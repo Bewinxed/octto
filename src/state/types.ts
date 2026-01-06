@@ -1,5 +1,5 @@
 // src/state/types.ts
-import type { QuestionType, QuestionConfig } from "../session/types";
+import type { QuestionType, QuestionConfig } from "@session";
 
 export type BranchStatus = "exploring" | "done";
 

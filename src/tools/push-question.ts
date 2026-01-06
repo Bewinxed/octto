@@ -1,7 +1,6 @@
 // src/tools/push-question.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { SessionManager } from "../session/manager";
-import type { QuestionType, QuestionConfig } from "../session/types";
+import type { SessionManager, QuestionType, QuestionConfig } from "@session";
 
 export function createPushQuestionTool(manager: SessionManager) {
   const push_question = tool({

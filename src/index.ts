@@ -1,13 +1,13 @@
 // src/index.ts
 import type { Plugin } from "@opencode-ai/plugin";
-import { SessionManager } from "./session/manager";
-import { createOcttoTools } from "./tools";
-import { agents } from "./agents";
-import { loadOcttoConfig, mergeAgentConfigs } from "./config-loader";
+import { SessionManager } from "@session";
+import { createOcttoTools } from "@tools";
+import { agents } from "@agents";
+import { loadConfig, mergeAgentConfigs } from "@config";
 
 const OcttoPlugin: Plugin = async (ctx) => {
   // Load user configuration and merge with default agents
-  const userConfig = await loadOcttoConfig();
+  const userConfig = await loadConfig();
   const mergedAgents = mergeAgentConfigs(agents, userConfig);
   const sessionManager = new SessionManager();
   const sessionsByOpenCodeSession = new Map<string, Set<string>>();

@@ -1,7 +1,7 @@
 import type { Server, ServerWebSocket } from "bun";
 import type { SessionManager } from "./manager";
 import type { WsClientMessage } from "./types";
-import { getHtmlBundle } from "../ui/bundle";
+import { getHtmlBundle } from "@ui";
 
 interface WsData {
   sessionId: string;

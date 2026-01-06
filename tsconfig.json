@@ -12,7 +12,16 @@
     "resolveJsonModule": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": ["bun-types"]
+    "types": ["bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@agents": ["src/agents"],
+      "@config": ["src/config"],
+      "@session": ["src/session"],
+      "@state": ["src/state"],
+      "@tools": ["src/tools"],
+      "@ui": ["src/ui"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
