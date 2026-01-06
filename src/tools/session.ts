@@ -1,8 +1,8 @@
 // src/tools/session.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { QuestionConfig, QuestionType, SessionManager } from "@session";
+import type { QuestionConfig, QuestionType, SessionStore } from "@session";
 
-export function createSessionTools(manager: SessionManager) {
+export function createSessionTools(sessions: SessionStore) {
   const start_session = tool({
     description: `Start an interactive octto session with initial questions.
 Opens a browser window with questions already displayed - no waiting.
@@ -55,7 +55,7 @@ Please call start_session again WITH your prepared questions.`;
           type: q.type as QuestionType,
           config: q.config as unknown as QuestionConfig,
         }));
-        const result = await manager.startSession({ title: args.title, questions });
+        const result = await sessions.startSession({ title: args.title, questions });
 
         let output = `## Session Started
 
@@ -88,7 +88,7 @@ Closes the browser window and cleans up resources.`,
       session_id: tool.schema.string().describe("Session ID to end"),
     },
     execute: async (args) => {
-      const result = await manager.endSession(args.session_id);
+      const result = await sessions.endSession(args.session_id);
       if (result.ok) {
         return `Session ${args.session_id} ended successfully.`;
       }

@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { rmSync } from "node:fs";
 
-import { SessionManager } from "../../src/session/manager";
+import { createSessionStore } from "../../src/session/sessions";
 import { StateManager } from "../../src/state/manager";
 import { createBranchTools } from "../../src/tools/branch";
 
@@ -10,14 +10,14 @@ const TEST_DIR = "/tmp/octto-branch-test";
 
 describe("Branch Tools", () => {
   let stateManager: StateManager;
-  let sessionManager: SessionManager;
+  let sessions: ReturnType<typeof createSessionStore>;
   let tools: ReturnType<typeof createBranchTools>;
 
   beforeEach(() => {
     rmSync(TEST_DIR, { recursive: true, force: true });
     stateManager = new StateManager(TEST_DIR);
-    sessionManager = new SessionManager({ skipBrowser: true });
-    tools = createBranchTools(stateManager, sessionManager);
+    sessions = createSessionStore({ skipBrowser: true });
+    tools = createBranchTools(stateManager, sessions);
   });
 
   afterEach(() => {

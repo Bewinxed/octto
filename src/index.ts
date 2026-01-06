@@ -1,25 +1,25 @@
 // src/index.ts
 
 import { agents } from "@agents";
-import { loadConfig, mergeAgentConfigs } from "@config";
+import { loadCustomConfig } from "@config";
 import type { Plugin } from "@opencode-ai/plugin";
-import { SessionManager } from "@session";
+import type { ToolContext } from "@opencode-ai/plugin/tool";
+import { createSessionStore } from "@session";
 import { createOcttoTools } from "@tools";
 
-const OcttoPlugin: Plugin = async (ctx) => {
-  // Load user configuration and merge with default agents
-  const userConfig = await loadConfig();
-  const mergedAgents = mergeAgentConfigs(agents, userConfig);
-  const sessionManager = new SessionManager();
+const Octto: Plugin = async (ctx) => {
+  const customConfig = await loadCustomConfig(agents);
+
+  const sessions = createSessionStore();
   const sessionsByOpenCodeSession = new Map<string, Set<string>>();
 
-  const baseTools = createOcttoTools(sessionManager, ctx.client);
+  const baseTools = createOcttoTools(sessions, ctx.client);
 
   // Wrap start_session to track for cleanup
   const originalStartSession = baseTools.start_session;
   const wrappedStartSession = {
     ...originalStartSession,
-    execute: async (args: Record<string, unknown>, toolCtx: import("@opencode-ai/plugin/tool").ToolContext) => {
+    execute: async (args: Record<string, unknown>, toolCtx: ToolContext) => {
       type StartSessionArgs = Parameters<typeof originalStartSession.execute>[0];
       const result = await originalStartSession.execute(args as StartSessionArgs, toolCtx);
 
@@ -47,7 +47,7 @@ const OcttoPlugin: Plugin = async (ctx) => {
     config: async (config) => {
       config.agent = {
         ...config.agent,
-        ...mergedAgents,
+        ...customConfig,
       };
     },
 
@@ -60,7 +60,7 @@ const OcttoPlugin: Plugin = async (ctx) => {
           const octtoSessions = sessionsByOpenCodeSession.get(openCodeSessionId);
           if (octtoSessions) {
             for (const sessionId of octtoSessions) {
-              await sessionManager.endSession(sessionId);
+              await sessions.endSession(sessionId);
             }
             sessionsByOpenCodeSession.delete(openCodeSessionId);
           }
@@ -70,6 +70,6 @@ const OcttoPlugin: Plugin = async (ctx) => {
   };
 };
 
-export default OcttoPlugin;
+export default Octto;
 
 export type * from "./types";

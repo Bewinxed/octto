@@ -1,8 +1,8 @@
 // src/tools/responses.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { SessionManager } from "@session";
+import type { SessionStore } from "@session";
 
-export function createResponseTools(manager: SessionManager) {
+export function createResponseTools(sessions: SessionStore) {
   const get_answer = tool({
     description: `Get the answer to a SPECIFIC question.
 By default returns immediately with current status.
@@ -17,7 +17,7 @@ NOTE: Prefer get_next_answer for better flow - it returns whichever question use
         .describe("Max milliseconds to wait if blocking (default: 300000 = 5 min)"),
     },
     execute: async (args) => {
-      const result = await manager.getAnswer({
+      const result = await sessions.getAnswer({
         question_id: args.question_id,
         block: args.block,
         timeout: args.timeout,
@@ -56,7 +56,7 @@ Push multiple questions, then call this repeatedly to get answers as they come.`
         .describe("Max milliseconds to wait if blocking (default: 300000 = 5 min)"),
     },
     execute: async (args) => {
-      const result = await manager.getNextAnswer({
+      const result = await sessions.getNextAnswer({
         session_id: args.session_id,
         block: args.block,
         timeout: args.timeout,
@@ -95,7 +95,7 @@ ${result.reason === "timeout" ? "Timed out waiting for response." : "No answer y
       session_id: tool.schema.string().optional().describe("Session ID (omit for all sessions)"),
     },
     execute: async (args) => {
-      const result = manager.listQuestions(args.session_id);
+      const result = sessions.listQuestions(args.session_id);
 
       if (result.questions.length === 0) {
         return "No questions found.";
@@ -120,7 +120,7 @@ The question will be removed from the user's queue.`,
       question_id: tool.schema.string().describe("Question ID to cancel"),
     },
     execute: async (args) => {
-      const result = manager.cancelQuestion(args.question_id);
+      const result = sessions.cancelQuestion(args.question_id);
       if (result.ok) {
         return `Question ${args.question_id} cancelled.`;
       }

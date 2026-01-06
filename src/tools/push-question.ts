@@ -1,8 +1,8 @@
 // src/tools/push-question.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { QuestionConfig, QuestionType, SessionManager } from "@session";
+import type { QuestionConfig, QuestionType, SessionStore } from "@session";
 
-export function createPushQuestionTool(manager: SessionManager) {
+export function createPushQuestionTool(sessions: SessionStore) {
   const push_question = tool({
     description: `Push a question to the session queue. This is the generic tool for adding any question type.
 The question will appear in the browser for the user to answer.`,
@@ -26,7 +26,7 @@ The question will appear in the browser for the user to answer.`,
     },
     execute: async (args) => {
       try {
-        const result = manager.pushQuestion(
+        const result = sessions.pushQuestion(
           args.session_id,
           args.type as QuestionType,
           args.config as unknown as QuestionConfig,

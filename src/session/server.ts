@@ -2,7 +2,7 @@ import type { Server, ServerWebSocket } from "bun";
 
 import { getHtmlBundle } from "@ui";
 
-import type { SessionManager } from "./manager";
+import type { SessionStore } from "./sessions";
 import type { WsClientMessage } from "./types";
 
 interface WsData {
@@ -11,7 +11,7 @@ interface WsData {
 
 export async function createServer(
   sessionId: string,
-  manager: SessionManager,
+  store: SessionStore,
 ): Promise<{ server: Server<WsData>; port: number }> {
   const htmlBundle = getHtmlBundle();
 
@@ -45,17 +45,17 @@ export async function createServer(
     websocket: {
       open(ws: ServerWebSocket<WsData>) {
         const { sessionId } = ws.data;
-        manager.handleWsConnect(sessionId, ws);
+        store.handleWsConnect(sessionId, ws);
       },
       close(ws: ServerWebSocket<WsData>) {
         const { sessionId } = ws.data;
-        manager.handleWsDisconnect(sessionId);
+        store.handleWsDisconnect(sessionId);
       },
       message(ws: ServerWebSocket<WsData>, message: string | Buffer) {
         const { sessionId } = ws.data;
         try {
           const parsed = JSON.parse(message.toString()) as WsClientMessage;
-          manager.handleWsMessage(sessionId, parsed);
+          store.handleWsMessage(sessionId, parsed);
         } catch (error) {
           console.error("[octto] Failed to parse WebSocket message:", error);
           // Send error back to client so it can handle gracefully

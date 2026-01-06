@@ -1,10 +1,10 @@
 // src/tools/questions.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { SessionManager } from "@session";
+import type { SessionStore } from "@session";
 
 import type { ConfirmConfig, PickManyConfig, PickOneConfig, RankConfig, RateConfig } from "../types";
 
-export function createQuestionTools(manager: SessionManager) {
+export function createQuestionTools(sessions: SessionStore) {
   const pick_one = tool({
     description: `Ask user to select ONE option from a list.
 Returns immediately with question_id. Use get_answer to retrieve response.
@@ -35,7 +35,7 @@ Response format: { selected: string } where selected is the chosen option id.`,
           recommended: args.recommended,
           allowOther: args.allowOther,
         };
-        const result = manager.pushQuestion(args.session_id, "pick_one", config);
+        const result = sessions.pushQuestion(args.session_id, "pick_one", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -80,7 +80,7 @@ Response format: { selected: string[] } where selected is array of chosen option
           max: args.max,
           allowOther: args.allowOther,
         };
-        const result = manager.pushQuestion(args.session_id, "pick_many", config);
+        const result = sessions.pushQuestion(args.session_id, "pick_many", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -109,7 +109,7 @@ Response format: { choice: "yes" | "no" | "cancel" }`,
           noLabel: args.noLabel,
           allowCancel: args.allowCancel,
         };
-        const result = manager.pushQuestion(args.session_id, "confirm", config);
+        const result = sessions.pushQuestion(args.session_id, "confirm", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -145,7 +145,7 @@ Response format: { ranked: string[] } where ranked is array of option ids in use
           options: args.options,
           context: args.context,
         };
-        const result = manager.pushQuestion(args.session_id, "rank", config);
+        const result = sessions.pushQuestion(args.session_id, "rank", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -190,7 +190,7 @@ Response format: { ratings: Record<string, number> } where key is option id, val
           max,
           step: args.step,
         };
-        const result = manager.pushQuestion(args.session_id, "rate", config);
+        const result = sessions.pushQuestion(args.session_id, "rate", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -199,9 +199,9 @@ Response format: { ratings: Record<string, number> } where key is option id, val
   });
 
   // Import remaining tools from other files
-  const inputTools = createInputTools(manager);
-  const presentationTools = createPresentationTools(manager);
-  const quickTools = createQuickTools(manager);
+  const inputTools = createInputTools(sessions);
+  const presentationTools = createPresentationTools(sessions);
+  const quickTools = createQuickTools(sessions);
 
   return {
     pick_one,
@@ -216,7 +216,7 @@ Response format: { ratings: Record<string, number> } where key is option id, val
 }
 
 // Input tools (ask_text, ask_image, ask_file, ask_code)
-function createInputTools(manager: SessionManager) {
+function createInputTools(sessions: SessionStore) {
   const ask_text = tool({
     description: `Ask user for text input (single or multi-line).
 Returns immediately with question_id. Use get_answer to retrieve response.
@@ -240,7 +240,7 @@ Response format: { text: string }`,
           minLength: args.minLength,
           maxLength: args.maxLength,
         };
-        const result = manager.pushQuestion(args.session_id, "ask_text", config);
+        const result = sessions.pushQuestion(args.session_id, "ask_text", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -266,7 +266,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
           multiple: args.multiple,
           maxImages: args.maxImages,
         };
-        const result = manager.pushQuestion(args.session_id, "ask_image", config);
+        const result = sessions.pushQuestion(args.session_id, "ask_image", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -296,7 +296,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
           accept: args.accept,
           maxSize: args.maxSize,
         };
-        const result = manager.pushQuestion(args.session_id, "ask_file", config);
+        const result = sessions.pushQuestion(args.session_id, "ask_file", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -322,7 +322,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
           language: args.language,
           placeholder: args.placeholder,
         };
-        const result = manager.pushQuestion(args.session_id, "ask_code", config);
+        const result = sessions.pushQuestion(args.session_id, "ask_code", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -334,7 +334,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
 }
 
 // Presentation/Feedback tools (show_diff, show_plan, show_options, review_section)
-function createPresentationTools(manager: SessionManager) {
+function createPresentationTools(sessions: SessionStore) {
   const show_diff = tool({
     description: `Show a diff and ask user to approve/reject/edit.
 Returns immediately with question_id. Use get_answer to retrieve response.`,
@@ -355,7 +355,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
           filePath: args.filePath,
           language: args.language,
         };
-        const result = manager.pushQuestion(args.session_id, "show_diff", config);
+        const result = sessions.pushQuestion(args.session_id, "show_diff", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -389,7 +389,7 @@ Response format: { approved: boolean, annotations?: Record<sectionId, string> }`
           sections: args.sections || [],
           markdown: args.markdown,
         };
-        const result = manager.pushQuestion(args.session_id, "show_plan", config);
+        const result = sessions.pushQuestion(args.session_id, "show_plan", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -429,7 +429,7 @@ Response format: { selected: string, feedback?: string } where selected is the c
           recommended: args.recommended,
           allowFeedback: args.allowFeedback,
         };
-        const result = manager.pushQuestion(args.session_id, "show_options", config);
+        const result = sessions.pushQuestion(args.session_id, "show_options", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -453,7 +453,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
           content: args.content,
           context: args.context,
         };
-        const result = manager.pushQuestion(args.session_id, "review_section", config);
+        const result = sessions.pushQuestion(args.session_id, "review_section", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -465,7 +465,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
 }
 
 // Quick tools (thumbs, emoji_react, slider)
-function createQuickTools(manager: SessionManager) {
+function createQuickTools(sessions: SessionStore) {
   const thumbs = tool({
     description: `Ask user for quick thumbs up/down feedback.
 Returns immediately with question_id. Use get_answer to retrieve response.
@@ -481,7 +481,7 @@ Response format: { choice: "up" | "down" }`,
           question: args.question,
           context: args.context,
         };
-        const result = manager.pushQuestion(args.session_id, "thumbs", config);
+        const result = sessions.pushQuestion(args.session_id, "thumbs", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -505,7 +505,7 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
           context: args.context,
           emojis: args.emojis,
         };
-        const result = manager.pushQuestion(args.session_id, "emoji_react", config);
+        const result = sessions.pushQuestion(args.session_id, "emoji_react", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -539,7 +539,7 @@ Response format: { value: number }`,
           defaultValue: args.defaultValue,
           context: args.context,
         };
-        const result = manager.pushQuestion(args.session_id, "slider", config);
+        const result = sessions.pushQuestion(args.session_id, "slider", config);
         return `Question pushed: ${result.question_id}\nUse get_answer("${result.question_id}") to retrieve response.`;
       } catch (error) {
         return `Failed: ${error instanceof Error ? error.message : String(error)}`;

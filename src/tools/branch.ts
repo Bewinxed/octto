@@ -1,6 +1,6 @@
 // src/tools/branch.ts
 import { tool } from "@opencode-ai/plugin/tool";
-import type { QuestionConfig, QuestionType, SessionManager } from "@session";
+import type { QuestionConfig, QuestionType, SessionStore } from "@session";
 import type { StateManager } from "@state";
 
 import { evaluateBranch } from "./probe-logic";
@@ -14,7 +14,7 @@ function generateId(prefix: string): string {
   return result;
 }
 
-export function createBranchTools(stateManager: StateManager, sessionManager: SessionManager) {
+export function createBranchTools(stateManager: StateManager, sessions: SessionStore) {
   const create_brainstorm = tool({
     description: "Create a new brainstorm session with exploration branches",
     args: {
@@ -52,7 +52,7 @@ export function createBranchTools(stateManager: StateManager, sessionManager: Se
         } as unknown as QuestionConfig,
       }));
 
-      const browserSession = await sessionManager.startSession({
+      const browserSession = await sessions.startSession({
         title: "Brainstorming Session",
         questions: initialQuestions,
       });
@@ -132,7 +132,7 @@ ${branchSummaries}`;
 
       // End browser session
       if (state.browser_session_id) {
-        await sessionManager.endSession(state.browser_session_id);
+        await sessions.endSession(state.browser_session_id);
       }
 
       // Build final summary
@@ -187,7 +187,7 @@ This is the recommended way to run a brainstorm - just create_brainstorm then aw
         }
 
         // Wait for next answer (BLOCKING - this is where we wait for user)
-        const answerResult = await sessionManager.getNextAnswer({
+        const answerResult = await sessions.getNextAnswer({
           session_id: args.browser_session_id,
           block: true,
           timeout: 300000, // 5 min timeout
@@ -280,7 +280,7 @@ Some branches still exploring. Call await_brainstorm_complete again to continue.
       // Wrap in try-catch in case session was deleted between completion check and push
       let _reviewQuestionId: string;
       try {
-        const pushResult = sessionManager.pushQuestion(args.browser_session_id, "show_plan", {
+        const pushResult = sessions.pushQuestion(args.browser_session_id, "show_plan", {
           question: "Review Design Plan",
           sections,
         } as QuestionConfig);
@@ -306,7 +306,7 @@ Write the design document to docs/plans/.`;
       }
 
       // Wait for review approval
-      const reviewResult = await sessionManager.getNextAnswer({
+      const reviewResult = await sessions.getNextAnswer({
         session_id: args.browser_session_id,
         block: true,
         timeout: 600000, // 10 min for review
@@ -418,7 +418,7 @@ ${approved ? "Design approved. Write the design document to docs/plans/." : "Cha
         context: `[${branch.scope}] ${originalConfig.context || ""}`.trim(),
       };
 
-      const { question_id: newQuestionId } = sessionManager.pushQuestion(
+      const { question_id: newQuestionId } = sessions.pushQuestion(
         browserSessionId,
         probeResult.question.type as QuestionType,
         configWithContext as QuestionConfig,

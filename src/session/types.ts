@@ -1,6 +1,25 @@
 // Session and Question types for the octto plugin
 import type { ServerWebSocket } from "bun";
 
+import type {
+  AskCodeConfig,
+  AskFileConfig,
+  AskImageConfig,
+  AskTextConfig,
+  ConfirmConfig,
+  EmojiReactConfig,
+  PickManyConfig,
+  PickOneConfig,
+  RankConfig,
+  RateConfig,
+  ReviewSectionConfig,
+  ShowDiffConfig,
+  ShowOptionsConfig,
+  ShowPlanConfig,
+  SliderConfig,
+  ThumbsConfig,
+} from "../types";
+
 export type QuestionStatus = "pending" | "answered" | "cancelled" | "timeout";
 
 export interface Question {
@@ -35,22 +54,22 @@ export type QuestionType =
   | "slider";
 
 export type QuestionConfig =
-  | import("../types").PickOneConfig
-  | import("../types").PickManyConfig
-  | import("../types").ConfirmConfig
-  | import("../types").RankConfig
-  | import("../types").RateConfig
-  | import("../types").AskTextConfig
-  | import("../types").AskImageConfig
-  | import("../types").AskFileConfig
-  | import("../types").AskCodeConfig
-  | import("../types").ShowDiffConfig
-  | import("../types").ShowPlanConfig
-  | import("../types").ShowOptionsConfig
-  | import("../types").ReviewSectionConfig
-  | import("../types").ThumbsConfig
-  | import("../types").EmojiReactConfig
-  | import("../types").SliderConfig;
+  | PickOneConfig
+  | PickManyConfig
+  | ConfirmConfig
+  | RankConfig
+  | RateConfig
+  | AskTextConfig
+  | AskImageConfig
+  | AskFileConfig
+  | AskCodeConfig
+  | ShowDiffConfig
+  | ShowPlanConfig
+  | ShowOptionsConfig
+  | ReviewSectionConfig
+  | ThumbsConfig
+  | EmojiReactConfig
+  | SliderConfig;
 
 export interface Session {
   id: string;

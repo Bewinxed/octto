@@ -21,12 +21,12 @@ function createMockContext(): PluginInput {
 describe("OcttoPlugin", () => {
   describe("initialization", () => {
     it("should export a default plugin function", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
       expect(typeof plugin).toBe("function");
     });
 
     it("should return tools when initialized", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
 
       const result = await plugin(createMockContext());
 
@@ -35,7 +35,7 @@ describe("OcttoPlugin", () => {
     });
 
     it("should include start_session tool", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
 
       const result = await plugin(createMockContext());
 
@@ -44,7 +44,7 @@ describe("OcttoPlugin", () => {
     });
 
     it("should include push_question tool", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
 
       const result = await plugin(createMockContext());
 
@@ -54,7 +54,7 @@ describe("OcttoPlugin", () => {
     });
 
     it("should include event handler", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
 
       const result = await plugin(createMockContext());
 
@@ -65,7 +65,7 @@ describe("OcttoPlugin", () => {
 
   describe("session tracking", () => {
     it("should handle session.deleted event without error when no sessions exist", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
 
       const result = await plugin(createMockContext());
 
@@ -81,7 +81,7 @@ describe("OcttoPlugin", () => {
     });
 
     it("should ignore non-session.deleted events", async () => {
-      const { default: plugin } = await import("../src/index");
+      const { default: plugin } = await import("../src");
 
       const result = await plugin(createMockContext());
 

@@ -11,10 +11,9 @@ import { type OcttoConfig, OcttoConfigSchema } from "./schema";
 export type { AgentOverride, OcttoConfig } from "./schema";
 
 /**
- * Load user configuration from ~/.config/opencode/octto.json
- * Returns null if file doesn't exist or is invalid.
+ * Load raw user configuration from ~/.config/opencode/octto.json
  */
-export async function loadConfig(configDir?: string): Promise<OcttoConfig | null> {
+async function load(configDir?: string): Promise<OcttoConfig | null> {
   const baseDir = configDir ?? join(homedir(), ".config", "opencode");
   const configPath = join(baseDir, "octto.json");
 
@@ -34,37 +33,23 @@ export async function loadConfig(configDir?: string): Promise<OcttoConfig | null
 }
 
 /**
- * Merge plugin default agents with user overrides.
- * User overrides take precedence for safe properties only.
+ * Load user configuration and merge with plugin agents.
+ * Returns merged agent configs with user overrides applied.
  */
-export function mergeAgentConfigs(
-  pluginAgents: Record<AGENTS, AgentConfig>,
-  userConfig: OcttoConfig | null,
-): Record<AGENTS, AgentConfig> {
-  if (!userConfig?.agents) {
-    return pluginAgents;
+export async function loadCustomConfig(
+  agents: Record<AGENTS, AgentConfig>,
+  configDir?: string,
+): Promise<Record<AGENTS, AgentConfig>> {
+  const config = await load(configDir);
+
+  if (!config?.agents) {
+    return agents;
   }
 
-  const merged = {} as Record<AGENTS, AgentConfig>;
-
-  for (const [name, agent] of Object.entries(pluginAgents)) {
-    const agentName = name as AGENTS;
-    const overrides = userConfig.agents[agentName];
-    if (overrides) {
-      merged[agentName] = {
-        ...agent,
-        ...(overrides.model && { model: overrides.model }),
-        ...(overrides.temperature !== undefined && {
-          temperature: overrides.temperature,
-        }),
-        ...(overrides.maxTokens !== undefined && {
-          maxTokens: overrides.maxTokens,
-        }),
-      };
-    } else {
-      merged[agentName] = agent;
-    }
+  const result = { ...agents };
+  for (const [name, override] of Object.entries(config.agents)) {
+    result[name as AGENTS] = { ...agents[name as AGENTS], ...override };
   }
 
-  return merged;
+  return result;
 }

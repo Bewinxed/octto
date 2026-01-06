@@ -1,7 +1,7 @@
 // src/tools/index.ts
 
 import type { OpencodeClient } from "@opencode-ai/sdk";
-import type { SessionManager } from "@session";
+import type { SessionStore } from "@session";
 import { StateManager } from "@state";
 
 import { createBranchTools } from "./branch";
@@ -10,14 +10,14 @@ import { createQuestionTools } from "./questions";
 import { createResponseTools } from "./responses";
 import { createSessionTools } from "./session";
 
-export function createOcttoTools(manager: SessionManager, _client?: OpencodeClient) {
+export function createOcttoTools(sessions: SessionStore, _client?: OpencodeClient) {
   const stateManager = new StateManager();
 
   return {
-    ...createSessionTools(manager),
-    ...createQuestionTools(manager),
-    ...createResponseTools(manager),
-    ...createPushQuestionTool(manager),
-    ...createBranchTools(stateManager, manager),
+    ...createSessionTools(sessions),
+    ...createQuestionTools(sessions),
+    ...createResponseTools(sessions),
+    ...createPushQuestionTool(sessions),
+    ...createBranchTools(stateManager, sessions),
   };
 }
