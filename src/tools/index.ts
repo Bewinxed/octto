@@ -6,7 +6,7 @@ import type { SessionStore } from "@/session";
 import { createStateStore } from "@/state";
 
 import { createBranchTools } from "./branch";
-import { createPushQuestionTool } from "./push-question";
+import { createPushQuestionTool } from "./factory";
 import { createQuestionTools } from "./questions";
 import { createResponseTools } from "./responses";
 import { createSessionTools } from "./session";

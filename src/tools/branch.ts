@@ -5,7 +5,7 @@ import type { QuestionConfig, QuestionType, SessionStore } from "@/session";
 import type { StateStore } from "@/state";
 
 import { formatBranchStatus, formatFindings, formatFindingsList, formatQASummary } from "./formatters";
-import { evaluateBranch } from "./probe-logic";
+import { processAnswer } from "./processor";
 import type { OcttoTools } from "./types";
 
 function generateId(prefix: string): string {
@@ -203,11 +203,16 @@ This is the recommended way to run a brainstorm - just create_brainstorm then aw
 
         // NON-BLOCKING: Fire off async processing (NO stale state passed)
         // Wrap in error handler to prevent unhandled rejections
-        const processing = processAnswerAsync(args.session_id, args.browser_session_id, question_id, response).catch(
-          (error) => {
-            console.error(`[octto] Error processing answer ${question_id}:`, error);
-          },
-        );
+        const processing = processAnswer(
+          stateStore,
+          sessions,
+          args.session_id,
+          args.browser_session_id,
+          question_id,
+          response,
+        ).catch((error) => {
+          console.error(`[octto] Error processing answer ${question_id}:`, error);
+        });
         pendingProcessing.push(processing);
       }
 
@@ -309,89 +314,6 @@ ${formatFindings(finalState)}
 ${approved ? "Design approved. Write the design document to docs/plans/." : "Changes requested. Review feedback and discuss with user before proceeding."}`;
     },
   });
-
-  // Helper: Process a single answer asynchronously
-  async function processAnswerAsync(
-    sessionId: string,
-    browserSessionId: string,
-    questionId: string,
-    answer: unknown,
-  ): Promise<void> {
-    // Get FRESH state (not stale)
-    const state = await stateStore.getSession(sessionId);
-    if (!state) {
-      return;
-    }
-
-    // Find which branch this question belongs to
-    let branchId: string | null = null;
-    for (const [id, branch] of Object.entries(state.branches)) {
-      if (branch.questions.some((q) => q.id === questionId)) {
-        branchId = id;
-        break;
-      }
-    }
-
-    if (!branchId) {
-      return;
-    }
-
-    // Skip if branch already done
-    if (state.branches[branchId].status === "done") {
-      return;
-    }
-
-    // Record the answer
-    try {
-      await stateStore.recordAnswer(sessionId, questionId, answer);
-    } catch (error) {
-      console.error(`[octto] Failed to record answer for ${questionId}:`, error);
-      // Don't silently lose the answer - rethrow so caller knows processing failed
-      throw error;
-    }
-
-    // Get FRESH state after recording answer
-    const updatedState = await stateStore.getSession(sessionId);
-    if (!updatedState) return;
-
-    const branch = updatedState.branches[branchId];
-    if (!branch || branch.status === "done") {
-      return;
-    }
-
-    // Evaluate branch (inline probe logic)
-    const probeResult = evaluateBranch(branch);
-
-    if (probeResult.done) {
-      // Complete the branch
-      await stateStore.completeBranch(sessionId, branchId, probeResult.finding || "No finding");
-    } else if (probeResult.question) {
-      // Push follow-up question with branch scope as context
-      const questionText =
-        typeof probeResult.question.config === "object" && "question" in probeResult.question.config
-          ? String((probeResult.question.config as { question: string }).question)
-          : "Follow-up question";
-
-      const originalConfig = probeResult.question.config as unknown as Record<string, unknown>;
-      const configWithContext = {
-        ...originalConfig,
-        context: `[${branch.scope}] ${originalConfig.context || ""}`.trim(),
-      };
-
-      const { question_id: newQuestionId } = sessions.pushQuestion(
-        browserSessionId,
-        probeResult.question.type as QuestionType,
-        configWithContext as QuestionConfig,
-      );
-
-      await stateStore.addQuestionToBranch(sessionId, branchId, {
-        id: newQuestionId,
-        type: probeResult.question.type as QuestionType,
-        text: questionText,
-        config: configWithContext as QuestionConfig,
-      });
-    }
-  }
 
   return {
     create_brainstorm,
