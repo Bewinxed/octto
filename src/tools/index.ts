@@ -3,6 +3,7 @@
 import type { OpencodeClient } from "@opencode-ai/sdk";
 import type { SessionManager } from "@session";
 import { StateManager } from "@state";
+
 import { createBranchTools } from "./branch";
 import { createPushQuestionTool } from "./push-question";
 import { createQuestionTools } from "./questions";

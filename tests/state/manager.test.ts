@@ -1,6 +1,7 @@
 // tests/state/manager.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { rmSync } from "fs";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { rmSync } from "node:fs";
+
 import { StateManager } from "../../src/state/manager";
 
 const TEST_DIR = "/tmp/octto-manager-test";
@@ -35,11 +36,9 @@ describe("StateManager", () => {
 
   describe("addQuestionToBranch", () => {
     it("should add question to the correct branch", async () => {
-      await manager.createSession("ses_addq", "Test", [
-        { id: "branch1", scope: "Test scope" },
-      ]);
+      await manager.createSession("ses_addq", "Test", [{ id: "branch1", scope: "Test scope" }]);
 
-      const question = await manager.addQuestionToBranch("ses_addq", "branch1", {
+      const _question = await manager.addQuestionToBranch("ses_addq", "branch1", {
         id: "q_test1",
         type: "ask_text",
         text: "What is the goal?",
@@ -54,9 +53,7 @@ describe("StateManager", () => {
 
   describe("recordAnswer", () => {
     it("should record answer for a question", async () => {
-      await manager.createSession("ses_answer", "Test", [
-        { id: "branch1", scope: "Test scope" },
-      ]);
+      await manager.createSession("ses_answer", "Test", [{ id: "branch1", scope: "Test scope" }]);
       await manager.addQuestionToBranch("ses_answer", "branch1", {
         id: "q_ans1",
         type: "ask_text",
@@ -74,9 +71,7 @@ describe("StateManager", () => {
 
   describe("completeBranch", () => {
     it("should mark branch as done with finding", async () => {
-      await manager.createSession("ses_complete", "Test", [
-        { id: "branch1", scope: "Test scope" },
-      ]);
+      await manager.createSession("ses_complete", "Test", [{ id: "branch1", scope: "Test scope" }]);
 
       await manager.completeBranch("ses_complete", "branch1", "User wants PostgreSQL and Redis");
 
@@ -109,9 +104,7 @@ describe("StateManager", () => {
     });
 
     it("should return null when all branches done", async () => {
-      await manager.createSession("ses_alldone", "Test", [
-        { id: "branch1", scope: "First scope" },
-      ]);
+      await manager.createSession("ses_alldone", "Test", [{ id: "branch1", scope: "First scope" }]);
       await manager.completeBranch("ses_alldone", "branch1", "Done");
 
       const branch = await manager.getNextExploringBranch("ses_alldone");
@@ -121,17 +114,13 @@ describe("StateManager", () => {
 
   describe("isSessionComplete", () => {
     it("should return false when branches are exploring", async () => {
-      await manager.createSession("ses_incomplete", "Test", [
-        { id: "branch1", scope: "First scope" },
-      ]);
+      await manager.createSession("ses_incomplete", "Test", [{ id: "branch1", scope: "First scope" }]);
 
       expect(await manager.isSessionComplete("ses_incomplete")).toBe(false);
     });
 
     it("should return true when all branches done", async () => {
-      await manager.createSession("ses_allcomplete", "Test", [
-        { id: "branch1", scope: "First scope" },
-      ]);
+      await manager.createSession("ses_allcomplete", "Test", [{ id: "branch1", scope: "First scope" }]);
       await manager.completeBranch("ses_allcomplete", "branch1", "Done");
 
       expect(await manager.isSessionComplete("ses_allcomplete")).toBe(true);

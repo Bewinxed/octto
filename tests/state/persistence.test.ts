@@ -1,7 +1,7 @@
 // tests/state/persistence.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { existsSync, rmSync, mkdirSync } from "fs";
-import { join } from "path";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { existsSync, rmSync } from "node:fs";
+
 import { StatePersistence } from "../../src/state/persistence";
 import type { BrainstormState } from "../../src/state/types";
 

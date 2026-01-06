@@ -1,5 +1,6 @@
 // src/agents/index.ts
 import type { AgentConfig } from "@opencode-ai/sdk";
+
 import { agent as bootstrapper } from "./bootstrapper";
 import { agent as octto } from "./octto";
 

@@ -1,5 +1,6 @@
 // tests/session/waiter.test.ts
-import { describe, it, expect, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
+
 import { WaiterManager, waitForResponse } from "../../src/session/waiter";
 
 describe("WaiterManager", () => {
@@ -11,9 +12,9 @@ describe("WaiterManager", () => {
 
   describe("registerWaiter", () => {
     it("should register a waiter and return cleanup function", () => {
-      let resolved = false;
+      let _resolved = false;
       const cleanup = manager.registerWaiter("key1", () => {
-        resolved = true;
+        _resolved = true;
       });
 
       expect(typeof cleanup).toBe("function");

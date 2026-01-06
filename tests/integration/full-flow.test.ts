@@ -1,5 +1,6 @@
 // tests/integration/full-flow.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
 import { SessionManager } from "../../src/session/manager";
 
 describe("Full Flow Integration", () => {
@@ -96,7 +97,7 @@ describe("Full Flow Integration", () => {
 
     // Push 3 questions
     const q1 = manager.pushQuestion(session_id, "confirm", { question: "Q1?" });
-    const q2 = manager.pushQuestion(session_id, "confirm", { question: "Q2?" });
+    const _q2 = manager.pushQuestion(session_id, "confirm", { question: "Q2?" });
     const q3 = manager.pushQuestion(session_id, "confirm", { question: "Q3?" });
 
     // User answers q3 first, then q1, then q2

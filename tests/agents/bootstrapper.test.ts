@@ -1,5 +1,6 @@
 // tests/agents/bootstrapper.test.ts
 import { describe, expect, it } from "bun:test";
+
 import { bootstrapper } from "../../src/agents";
 
 describe("bootstrapper agent", () => {

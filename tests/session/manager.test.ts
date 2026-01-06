@@ -1,5 +1,6 @@
 // tests/session/manager.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
 import { SessionManager } from "../../src/session/manager";
 
 describe("SessionManager", () => {

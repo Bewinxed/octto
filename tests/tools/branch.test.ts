@@ -1,9 +1,10 @@
 // tests/tools/branch.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { rmSync } from "fs";
-import { createBranchTools } from "../../src/tools/branch";
-import { StateManager } from "../../src/state/manager";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { rmSync } from "node:fs";
+
 import { SessionManager } from "../../src/session/manager";
+import { StateManager } from "../../src/state/manager";
+import { createBranchTools } from "../../src/tools/branch";
 
 const TEST_DIR = "/tmp/octto-branch-test";
 
@@ -25,23 +26,25 @@ describe("Branch Tools", () => {
 
   describe("create_brainstorm", () => {
     it("should create brainstorm session with branches", async () => {
-      const result = await tools.create_brainstorm.execute({
-        request: "Add healthcheck",
-        branches: [
-          {
-            id: "services",
-            scope: "Which services to monitor",
-            initial_question: {
-              type: "ask_text",
-              config: { question: "What services?" },
+      const result = await tools.create_brainstorm.execute(
+        {
+          request: "Add healthcheck",
+          branches: [
+            {
+              id: "services",
+              scope: "Which services to monitor",
+              initial_question: {
+                type: "ask_text",
+                config: { question: "What services?" },
+              },
             },
-          },
-        ],
-      }, {} as any);
+          ],
+        },
+        {} as any,
+      );
 
       expect(result).toContain("ses_");
       expect(result).toContain("services");
     });
   });
-
 });

@@ -1,5 +1,6 @@
 // tests/index.test.ts
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import type { PluginInput } from "@opencode-ai/plugin";
 
 // We need to test the plugin initialization behavior

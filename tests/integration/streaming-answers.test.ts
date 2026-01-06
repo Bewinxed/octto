@@ -1,5 +1,6 @@
 // tests/integration/streaming-answers.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
 import { SessionManager } from "../../src/session/manager";
 
 describe("Streaming Answer Processing", () => {
@@ -25,7 +26,7 @@ describe("Streaming Answer Processing", () => {
           { id: "simple", label: "Simple" },
         ],
       });
-      const q2 = manager.pushQuestion(session_id, "ask_text", {
+      const _q2 = manager.pushQuestion(session_id, "ask_text", {
         question: "Any constraints?",
       });
       const q3 = manager.pushQuestion(session_id, "pick_many", {
@@ -75,7 +76,7 @@ describe("Streaming Answer Processing", () => {
 
       // Initial questions
       const q1 = manager.pushQuestion(session_id, "confirm", { question: "Ready?" });
-      const q2 = manager.pushQuestion(session_id, "ask_text", { question: "Details?" });
+      const _q2 = manager.pushQuestion(session_id, "ask_text", { question: "Details?" });
 
       // Answer Q1
       manager.handleWsMessage(session_id, {

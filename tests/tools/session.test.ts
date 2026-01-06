@@ -1,5 +1,6 @@
 // tests/tools/session.test.ts
-import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
 import { SessionManager } from "../../src/session/manager";
 import { createSessionTools } from "../../src/tools/session";
 

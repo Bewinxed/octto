@@ -2,6 +2,7 @@
 import { tool } from "@opencode-ai/plugin/tool";
 import type { QuestionConfig, QuestionType, SessionManager } from "@session";
 import type { StateManager } from "@state";
+
 import { evaluateBranch } from "./probe-logic";
 
 function generateId(prefix: string): string {
