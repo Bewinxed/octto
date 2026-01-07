@@ -7,7 +7,7 @@ import { BRANCH_STATUSES, type BrainstormState, createStateStore, type StateStor
 
 import { formatBranchStatus, formatFindings, formatFindingsList, formatQASummary } from "./formatters";
 import { processAnswer } from "./processor";
-import type { OcttoTools } from "./types";
+import type { OcttoTools, OpencodeClient } from "./types";
 import { generateSessionId } from "./utils";
 
 const MAX_ITERATIONS = 50;
@@ -26,6 +26,7 @@ async function collectAnswers(
   sessions: SessionStore,
   sessionId: string,
   browserSessionId: string,
+  client: OpencodeClient,
 ): Promise<CollectionResult> {
   const pendingProcessing: Promise<void>[] = [];
 
@@ -51,11 +52,17 @@ async function collectAnswers(
     const { question_id, response } = answer;
     if (!question_id || response === undefined) continue;
 
-    const processing = processAnswer(stateStore, sessions, sessionId, browserSessionId, question_id, response).catch(
-      (error) => {
-        console.error(`[octto] Error processing answer ${question_id}:`, error);
-      },
-    );
+    const processing = processAnswer(
+      stateStore,
+      sessions,
+      sessionId,
+      browserSessionId,
+      question_id,
+      response,
+      client,
+    ).catch((error) => {
+      console.error(`[octto] Error processing answer ${question_id}:`, error);
+    });
     pendingProcessing.push(processing);
   }
 
@@ -155,7 +162,7 @@ function formatCompletionResult(state: BrainstormState, approved: boolean, feedb
 
 // --- Tool definitions ---
 
-export function createBrainstormTools(sessions: SessionStore): OcttoTools {
+export function createBrainstormTools(sessions: SessionStore, client: OpencodeClient): OcttoTools {
   const store = createStateStore();
 
   const create_brainstorm = tool({
@@ -284,7 +291,13 @@ This is the recommended way to run a brainstorm - just create_brainstorm then aw
       browser_session_id: tool.schema.string().describe("Browser session ID (for collecting answers)"),
     },
     execute: async (args) => {
-      const { state, allComplete } = await collectAnswers(store, sessions, args.session_id, args.browser_session_id);
+      const { state, allComplete } = await collectAnswers(
+        store,
+        sessions,
+        args.session_id,
+        args.browser_session_id,
+        client,
+      );
 
       if (!state) return "<error>Session lost</error>";
       if (!allComplete) return formatInProgressResult(state);

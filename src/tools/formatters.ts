@@ -3,7 +3,7 @@
 import type { Answer } from "@/session";
 import type { BrainstormState, Branch, BranchQuestion } from "@/state";
 
-import { extractAnswerSummary } from "./probe-logic";
+import { extractAnswerSummary } from "./extractor";
 
 function escapeXml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

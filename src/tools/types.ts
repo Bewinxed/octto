@@ -1,6 +1,7 @@
 // src/tools/types.ts
 
 import type { ToolContext } from "@opencode-ai/plugin/tool";
+import type { createOpencodeClient } from "@opencode-ai/sdk";
 
 // Using `any` to avoid exposing zod types in declaration files.
 // The actual tools are typesafe via zod schemas.
@@ -11,3 +12,5 @@ export interface OcttoTool {
 }
 
 export type OcttoTools = Record<string, OcttoTool>;
+
+export type OpencodeClient = ReturnType<typeof createOpencodeClient>;
