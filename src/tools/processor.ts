@@ -96,11 +96,7 @@ async function runProbeAgent(client: OpencodeClient, state: BrainstormState, bra
     }
 
     const result = JSON.parse(jsonMatch[0]) as ProbeResult;
-    if (result.done) {
-      console.log(`[octto] Probe completed branch "${branchId}": ${result.finding}`);
-    } else {
-      console.log(`[octto] Probe asking follow-up for branch "${branchId}": ${result.question?.type}`);
-    }
+    console.log(`[octto] Probe result:`, JSON.stringify(result, null, 2));
     return result;
   } finally {
     await client.session.delete({ path: { id: probeSessionId } }).catch(() => {});
@@ -150,11 +146,13 @@ export async function processAnswer(
   const result = await runProbeAgent(client, updatedState, branchId);
 
   if (result.done) {
+    console.log(`[octto] Branch "${branchId}" completed with finding: ${result.finding}`);
     await stateStore.completeBranch(sessionId, branchId, result.finding || "No finding");
     return;
   }
 
   if (result.question) {
+    console.log(`[octto] Branch "${branchId}" needs follow-up: ${result.question.type}`);
     const config = result.question.config as { question?: string; context?: string };
     const questionText = config.question ?? "Follow-up question";
     const existingContext = config.context ?? "";
@@ -168,6 +166,7 @@ export async function processAnswer(
       result.question.type,
       configWithContext,
     );
+    console.log(`[octto] Pushed follow-up question ${newQuestionId} to browser`);
 
     await stateStore.addQuestionToBranch(sessionId, branchId, {
       id: newQuestionId,
@@ -175,5 +174,8 @@ export async function processAnswer(
       text: questionText,
       config: configWithContext,
     });
+    console.log(`[octto] Added follow-up question to branch state`);
+  } else {
+    console.log(`[octto] Probe returned done=false but no question`);
   }
 }
