@@ -38,7 +38,7 @@ export interface Question {
   status: QuestionStatus;
   createdAt: Date;
   answeredAt?: Date;
-  response?: unknown;
+  response?: Answer;
   /** True if this answer was already returned via get_next_answer */
   retrieved?: boolean;
 }
@@ -234,7 +234,7 @@ export interface GetAnswerInput {
 export interface GetAnswerOutput {
   completed: boolean;
   status: QuestionStatus;
-  response?: unknown;
+  response?: Answer;
   reason?: "timeout" | "cancelled" | "pending";
 }
 
@@ -251,7 +251,7 @@ export interface GetNextAnswerOutput {
   question_id?: string;
   question_type?: QuestionType;
   status: AnswerStatus;
-  response?: unknown;
+  response?: Answer;
   reason?: typeof STATUSES.TIMEOUT | typeof STATUSES.NONE_PENDING;
 }
 
@@ -293,7 +293,7 @@ export interface WsEndMessage {
 export interface WsResponseMessage {
   type: "response";
   id: string;
-  answer: unknown;
+  answer: Answer;
 }
 
 export interface WsConnectedMessage {

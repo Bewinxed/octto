@@ -5,6 +5,7 @@ import { generateId } from "../tools/utils";
 import { openBrowser } from "./browser";
 import { createServer } from "./server";
 import {
+  type Answer,
   type BaseConfig,
   type EndSessionOutput,
   type GetAnswerInput,
@@ -48,8 +49,8 @@ export interface SessionStore {
 export function createSessionStore(options: SessionStoreOptions = {}): SessionStore {
   const sessions = new Map<string, Session>();
   const questionToSession = new Map<string, string>();
-  const responseWaiters = createWaiters<string, unknown>();
-  const sessionWaiters = createWaiters<string, { questionId: string; response: unknown }>();
+  const responseWaiters = createWaiters<string, Answer | { cancelled: true }>();
+  const sessionWaiters = createWaiters<string, { questionId: string; response: Answer }>();
 
   const store: SessionStore = {
     async startSession(input: StartSessionInput): Promise<StartSessionOutput> {

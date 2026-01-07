@@ -1,7 +1,7 @@
 // src/tools/brainstorm.ts
 import { tool } from "@opencode-ai/plugin/tool";
 
-import type { Answer, ReviewAnswer, SessionStore } from "@/session";
+import type { ReviewAnswer, SessionStore } from "@/session";
 import { QUESTION_TYPES, QUESTIONS, STATUSES } from "@/session";
 import type { BrainstormState, StateStore } from "@/state";
 import { createStateStore } from "@/state";
@@ -52,17 +52,11 @@ async function collectAnswers(
     const { question_id, response } = answer;
     if (!question_id || response === undefined) continue;
 
-    // Cast to Answer - the UI sends properly typed responses
-    const processing = processAnswer(
-      stateStore,
-      sessions,
-      sessionId,
-      browserSessionId,
-      question_id,
-      response as Answer,
-    ).catch((error) => {
-      console.error(`[octto] Error processing answer ${question_id}:`, error);
-    });
+    const processing = processAnswer(stateStore, sessions, sessionId, browserSessionId, question_id, response).catch(
+      (error) => {
+        console.error(`[octto] Error processing answer ${question_id}:`, error);
+      },
+    );
     pendingProcessing.push(processing);
   }
 
