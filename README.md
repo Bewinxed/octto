@@ -1,6 +1,32 @@
 # octto
 
-OpenCode plugin that turns rough ideas into designs through branch-based exploration with a browser UI.
+OpenCode plugin that turns rough ideas into designs through parallel branch exploration with an interactive browser UI.
+
+## The Problem
+
+Traditional AI brainstorming is **slow and tedious**:
+- Agent asks question → you wait → type answer → agent thinks → asks next question
+- Sequential, one at a time
+- 10+ minutes of back-and-forth
+
+## The Solution
+
+Octto flips the model: **parallel exploration with an interactive browser UI**.
+
+```
+         ┌─ Branch 1: Q1 → Answer → Q2 → Finding
+Request ─┼─ Branch 2: Q1 → Answer → Finding
+         └─ Branch 3: Q1 → Answer → Q2 → Q3 → Finding
+                    ↑
+           All visible at once in browser
+```
+
+**What changes:**
+- All questions visible immediately in a browser window
+- Answer in any order, at your pace
+- Probe agents evaluate branches in parallel (async)
+- Each branch gets exactly the depth it needs
+- **2-3 minutes** instead of 10+
 
 ## Quick Start
 
@@ -16,78 +42,64 @@ Select the **octto** agent, then describe your idea:
 I want to add a caching layer to the API
 ```
 
-A browser window opens with questions. Answer them. Get a design document.
+A browser window opens. Answer the questions. Get a design document.
 
-## Configuration
+## The Interactive Browser UI
 
-Optionally configure agent settings in `~/.config/opencode/octto.json`:
+This is the key innovation. Instead of terminal back-and-forth:
 
-```json
-{
-  "agents": {
-    "octto": {
-      "model": "anthropic/claude-opus-4",
-      "temperature": 0.7
-    }
-  }
-}
-```
+- **Visual question cards** with rich input types (dropdowns, sliders, code editors)
+- **Live queue** showing remaining questions and completed answers
+- **Parallel answering** - see all branches, answer in any order
+- **Instant feedback** - new follow-up questions appear as you answer
+- **Final review** - approve the consolidated plan before saving
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `model` | string | Model identifier (e.g., `anthropic/claude-opus-4`, `anthropic/claude-sonnet-4`) |
-| `temperature` | number | Sampling temperature (0-1) |
-| `maxSteps` | number | Maximum agent steps |
+### 14 Question Types
 
-Only these safe properties can be overridden. Missing config file is fine - defaults are used.
+| Type | Use Case |
+|------|----------|
+| `pick_one` | Single choice with options |
+| `pick_many` | Multiple selection |
+| `confirm` | Yes/No decisions |
+| `ask_text` | Free-form text |
+| `slider` | Numeric range |
+| `rank` | Order items by priority |
+| `rate` | Score items (stars) |
+| `thumbs` | Quick up/down feedback |
+| `show_options` | Options with pros/cons |
+| `show_diff` | Code diff review |
+| `ask_code` | Code input with syntax highlighting |
+| `ask_image` | Image upload |
+| `ask_file` | File upload |
+| `emoji_react` | Emoji selection |
 
-## Workflow
+## How It Works
 
-```
-Request → Bootstrapper → Branches → Browser UI → Design Doc
-              ↓              ↓           ↓
-         [2-4 branches]  [questions]  [answers]
-```
+### 3 Specialized Agents
 
-### Branch-Based Exploration
+| Agent | Role |
+|-------|------|
+| **octto** | Orchestrator - runs the session |
+| **bootstrapper** | Analyzes request, creates 2-4 exploration branches |
+| **probe** | Evaluates each branch, decides depth adaptively |
 
-Instead of linear questioning, octto creates **parallel exploration branches**. Each branch has a scope (e.g., "Architecture", "Data Model", "Security") and asks questions within that scope.
+### The Flow
 
-```
-User: "Add user authentication"
-         ↓
-    ┌────┴────┐
-    ↓         ↓         ↓
-[auth_method] [storage] [session]
-    ↓         ↓         ↓
- OAuth?     Redis?    JWT?
- SAML?      Postgres? Cookie?
-    ↓         ↓         ↓
-  finding   finding   finding
-         ↓
-   Design Document
-```
+1. **Decomposition**: Bootstrapper analyzes your request, creates 2-4 branches. Each explores ONE aspect (e.g., "security", "data format", "dependencies").
 
-### Event-Driven Answer Processing
+2. **Initial Questions**: Each branch gets an initial question. All appear in the browser simultaneously.
 
-Answers are processed asynchronously as they arrive:
+3. **Parallel Answering**: Answer at your own pace, any order. No blocking.
 
-1. `create_brainstorm` - Creates branches, opens browser with initial questions
-2. `await_brainstorm_complete` - Event loop that:
-   - Waits for any answer (non-blocking)
-   - Fires off async processing (records answer, evaluates branch)
-   - Pushes follow-up questions or marks branch done
-   - Continues until all branches complete
-3. `show_plan` - Displays findings for review/approval
-4. `end_brainstorm` - Writes design document
+4. **Adaptive Depth**: When you answer, a probe agent evaluates:
+   - Need more info? → Generates follow-up question
+   - Understood? → Synthesizes finding, completes branch
 
-### Inline Probe Logic
+5. **Intelligent Completion**: Each branch continues until the probe feels confident. Some need 2 questions, others 4.
 
-Follow-up questions are generated by rules-based logic (no LLM call):
+6. **Final Review**: All findings consolidated into a plan. Approve or request changes.
 
-- After 1st answer: Ask about priorities (context-aware options)
-- After 2nd answer: Confirm direction
-- After 3rd answer: Mark branch done with synthesized finding
+7. **Output**: Design saved to `docs/plans/YYYY-MM-DD-{topic}-design.md`
 
 ## Architecture
 
@@ -96,73 +108,28 @@ Follow-up questions are generated by rules-based logic (no LLM call):
 | Session | Purpose | Storage |
 |---------|---------|---------|
 | **State Session** | Branch state, Q&A history, findings | `.octto/{id}.json` |
-| **Browser Session** | WebSocket connection, pending questions | In-memory |
-
-### Agents
-
-| Agent | Role |
-|-------|------|
-| `octto` | Orchestrator - coordinates flow |
-| `bootstrapper` | Analyzes request, creates 2-4 branches with initial questions |
+| **Browser Session** | WebSocket, pending questions, live UI | In-memory |
 
 ### Tools
 
 | Tool | Description |
 |------|-------------|
 | `create_brainstorm` | Create session with branches, open browser |
-| `await_brainstorm_complete` | Event loop - process answers until done |
-| `get_session_summary` | Debug tool - view branch status |
+| `await_brainstorm_complete` | Process answers until all branches done |
 | `end_brainstorm` | Close session, return findings |
 
-### Question Types
+## Configuration
 
-| Type | Use Case |
-|------|----------|
-| `pick_one` | Choose ONE option |
-| `pick_many` | Select MULTIPLE options |
-| `confirm` | Yes/No decisions |
-| `ask_text` | Free-form text input |
-| `show_plan` | Document review with sections |
-| `show_options` | Options with pros/cons |
-| `show_diff` | Before/after code review |
-| `rank` | Order items by priority |
-| `rate` | Score items on scale |
-| `slider` | Numeric range input |
-| `thumbs` | Quick up/down feedback |
+Optionally configure in `~/.config/opencode/octto.json`:
 
-## Project Structure
-
-```
-src/
-├── index.ts              # Plugin entry, event handlers
-├── config-loader.ts      # User configuration loading
-├── agents/
-│   ├── octto.ts          # Orchestrator prompt
-│   └── bootstrapper.ts   # Branch creation prompt
-├── state/
-│   ├── store.ts          # Branch state CRUD
-│   ├── persistence.ts    # JSON file storage
-│   └── types.ts          # BrainstormState, Branch
-├── session/
-│   ├── sessions.ts       # Browser session, WebSocket
-│   ├── server.ts         # HTTP/WS server (Bun.serve)
-│   ├── waiter.ts         # Async answer waiters
-│   └── types.ts          # Question, Session types
-├── tools/
-│   ├── branch.ts         # create/await/end_brainstorm
-│   ├── probe-logic.ts    # Rules-based follow-up generation
-│   ├── questions.ts      # Question type tools
-│   ├── responses.ts      # get_answer, get_next_answer
-│   └── session.ts        # start/end_session (generic)
-└── ui/
-    └── bundle.ts         # Browser UI (inline HTML/CSS/JS)
-```
-
-## Design Output
-
-Designs are written to:
-```
-docs/plans/YYYY-MM-DD-{topic}-design.md
+```json
+{
+  "agents": {
+    "octto": { "model": "anthropic/claude-opus-4" },
+    "bootstrapper": { "model": "anthropic/claude-sonnet-4" },
+    "probe": { "model": "anthropic/claude-sonnet-4" }
+  }
+}
 ```
 
 ## Development
@@ -173,33 +140,15 @@ bun run build
 bun test
 ```
 
-### Local Testing
+## Why Branches?
 
-```json
-{ "plugin": ["/path/to/octto"] }
-```
-
-## How It Works
-
-1. **Bootstrapper** analyzes your request and creates 2-4 branches with scopes
-2. **create_brainstorm** saves state, opens browser with initial questions
-3. **await_brainstorm_complete** enters event loop:
-   - `getNextAnswer()` blocks until any question answered
-   - `processAnswerAsync()` fires without blocking:
-     - Records answer to state
-     - Runs `evaluateBranch()` (inline probe logic)
-     - Either completes branch or pushes follow-up
-   - Loop continues until all branches done
-4. **show_plan** displays findings in browser for approval
-5. **end_brainstorm** returns findings for design doc generation
-
-## Philosophy
-
-1. **Parallel exploration** - Multiple aspects explored simultaneously
-2. **Scoped questions** - Each branch stays within its scope
-3. **Non-blocking processing** - Answers processed async, UI stays responsive
-4. **Browser-first** - Visual UI beats terminal for complex input
-5. **Human approval** - Review findings before generating design doc
+| Sequential (old) | Parallel (octto) |
+|------------------|------------------|
+| One question at a time | All questions visible at once |
+| Wait for agent between each | Async processing, no waiting |
+| Fixed depth | Adaptive depth per branch |
+| 10+ minutes | 2-3 minutes |
+| Terminal typing | Visual browser UI |
 
 ## License
 
