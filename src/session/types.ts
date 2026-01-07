@@ -35,23 +35,26 @@ export interface Question {
   retrieved?: boolean;
 }
 
-export type QuestionType =
-  | "pick_one"
-  | "pick_many"
-  | "confirm"
-  | "rank"
-  | "rate"
-  | "ask_text"
-  | "ask_image"
-  | "ask_file"
-  | "ask_code"
-  | "show_diff"
-  | "show_plan"
-  | "show_options"
-  | "review_section"
-  | "thumbs"
-  | "emoji_react"
-  | "slider";
+export const QUESTION_TYPES = [
+  "pick_one",
+  "pick_many",
+  "confirm",
+  "rank",
+  "rate",
+  "ask_text",
+  "ask_image",
+  "ask_file",
+  "ask_code",
+  "show_diff",
+  "show_plan",
+  "show_options",
+  "review_section",
+  "thumbs",
+  "emoji_react",
+  "slider",
+] as const;
+
+export type QuestionType = (typeof QUESTION_TYPES)[number];
 
 export type QuestionConfig =
   | PickOneConfig

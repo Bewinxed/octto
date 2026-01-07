@@ -1,7 +1,8 @@
 // src/tools/brainstorm.ts
 import { tool } from "@opencode-ai/plugin/tool";
 
-import type { QuestionConfig, QuestionType, SessionStore } from "@/session";
+import type { QuestionConfig, SessionStore } from "@/session";
+import { QUESTION_TYPES } from "@/session";
 import type { BrainstormState, StateStore } from "@/state";
 import { createStateStore } from "@/state";
 
@@ -192,6 +193,7 @@ ${approved ? "Design approved. Write the design document to docs/plans/." : "Cha
 
 export function createBrainstormTools(sessions: SessionStore): OcttoTools {
   const stateStore = createStateStore();
+
   const create_brainstorm = tool({
     description: "Create a new brainstorm session with exploration branches",
     args: {
@@ -202,7 +204,7 @@ export function createBrainstormTools(sessions: SessionStore): OcttoTools {
             id: tool.schema.string(),
             scope: tool.schema.string(),
             initial_question: tool.schema.object({
-              type: tool.schema.string(),
+              type: tool.schema.enum(QUESTION_TYPES),
               config: tool.schema.looseObject({}),
             }),
           }),
@@ -218,13 +220,17 @@ export function createBrainstormTools(sessions: SessionStore): OcttoTools {
         args.branches.map((b) => ({ id: b.id, scope: b.scope })),
       );
 
-      const initialQuestions = args.branches.map((b) => ({
-        type: b.initial_question.type as QuestionType,
-        config: {
-          ...b.initial_question.config,
-          context: `[${b.scope}] ${(b.initial_question.config as Record<string, unknown>).context || ""}`.trim(),
-        } as unknown as QuestionConfig,
-      }));
+      const initialQuestions = args.branches.map((b) => {
+        const cfg = b.initial_question.config as Record<string, unknown>;
+        const existingContext = typeof cfg.context === "string" ? cfg.context : "";
+        return {
+          type: b.initial_question.type,
+          config: {
+            ...cfg,
+            context: `[${b.scope}] ${existingContext}`.trim(),
+          } as QuestionConfig,
+        };
+      });
 
       const browserSession = await sessions.startSession({
         title: "Brainstorming Session",
@@ -244,7 +250,7 @@ export function createBrainstormTools(sessions: SessionStore): OcttoTools {
 
           await stateStore.addQuestionToBranch(sessionId, branch.id, {
             id: questionId,
-            type: branch.initial_question.type as QuestionType,
+            type: branch.initial_question.type,
             text: questionText,
             config: branch.initial_question.config as unknown as QuestionConfig,
           });
