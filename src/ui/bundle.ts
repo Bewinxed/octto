@@ -792,7 +792,8 @@ export function getHtmlBundle(): string {
       } else if (answered.length > 0) {
         // All answered, waiting for more questions
         html += '<div class="thinking">';
-        html += '<div class="thinking-text">Thinking...</div>';
+        html += '<div class="thinking-text">All questions answered</div>';
+        html += '<div style="color: var(--foreground-subtle); font-size: 0.75rem; margin-top: 0.5rem;">Waiting for agent to continue...</div>';
         html += '<div class="spinner"></div>';
         html += '</div>';
       }

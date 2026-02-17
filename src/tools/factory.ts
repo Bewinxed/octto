@@ -42,6 +42,27 @@ Returns immediately with question_id. Use get_answer to retrieve response.`,
 }
 
 export function createPushQuestionTool(sessions: SessionStore): OcttoTools {
+  const validateQuestionConfig = (type: string, config: Record<string, unknown>): string | null => {
+    const options = config.options as Array<unknown> | undefined;
+
+    switch (type) {
+      case "pick_one":
+      case "pick_many":
+      case "rank":
+      case "rate":
+        if (!options || options.length === 0) {
+          return `${type} requires at least one option. Use ask_text for free-form input, or provide options array.`;
+        }
+        break;
+      case "show_options":
+        if (!options || options.length === 0) {
+          return "show_options requires at least one option";
+        }
+        break;
+    }
+    return null;
+  };
+
   const push_question = tool({
     description: `Push a question to the session queue. This is the generic tool for adding any question type.
 The question will appear in the browser for the user to answer.`,
@@ -69,6 +90,9 @@ The question will appear in the browser for the user to answer.`,
         .describe("Question configuration (varies by type)"),
     },
     execute: async (args) => {
+      const validationError = validateQuestionConfig(args.type, args.config as Record<string, unknown>);
+      if (validationError) return `Failed: ${validationError}`;
+
       try {
         const result = sessions.pushQuestion(args.session_id, args.type, args.config);
         return `Question pushed: ${result.question_id}
