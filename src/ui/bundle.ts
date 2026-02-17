@@ -746,7 +746,12 @@ export function getHtmlBundle(): string {
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.type === 'question') {
-          questions.push(msg);
+          const existingIdx = questions.findIndex(q => q.id === msg.id);
+          if (existingIdx >= 0) {
+            questions[existingIdx] = msg;
+          } else {
+            questions.push(msg);
+          }
           render();
         } else if (msg.type === 'cancel') {
           questions = questions.filter(q => q.id !== msg.id);
@@ -813,6 +818,7 @@ export function getHtmlBundle(): string {
         if (isExpanded) {
           html += '<div class="card-answered-body">';
           html += renderAnsweredQuestion(q);
+          html += '<div class="btn-group" style="margin-top: 1rem;"><button onclick="event.stopPropagation(); reopenQuestion(\\'' + q.id + '\\')" class="btn">Edit Answer</button></div>';
           html += '</div>';
         }
         html += '</div>';
@@ -903,6 +909,7 @@ export function getHtmlBundle(): string {
     
     function renderPickOne(q) {
       const options = q.config.options || [];
+      const allowOther = q.config.allowOther;
       let html = '<div class="options">';
       for (const opt of options) {
         const isRecommended = q.config.recommended === opt.id;
@@ -915,6 +922,16 @@ export function getHtmlBundle(): string {
         if (opt.description) html += '<div class="option-desc">' + escapeHtml(opt.description) + '</div>';
         html += '</div></label>';
       }
+      if (allowOther) {
+        html += '<label class="option">';
+        html += '<input type="radio" name="pick_' + q.id + '" value="__other__" onchange="toggleOtherInput(\\'' + q.id + '\\', true)">';
+        html += '<div class="option-content">';
+        html += '<div class="option-label">Other...</div>';
+        html += '</div></label>';
+        html += '<div id="other_' + q.id + '" style="display:none; margin-top:0.5rem;">';
+        html += '<input type="text" id="other_text_' + q.id + '" class="input" placeholder="Enter your answer...">';
+        html += '</div>';
+      }
       html += '</div>';
       html += '<div class="btn-group"><button onclick="submitPickOne(\\'' + q.id + '\\')" class="btn btn-primary">Submit</button></div>';
       return html;
@@ -922,6 +939,7 @@ export function getHtmlBundle(): string {
     
     function renderPickMany(q) {
       const options = q.config.options || [];
+      const allowOther = q.config.allowOther;
       let html = '<div class="options">';
       for (const opt of options) {
         html += '<label class="option">';
@@ -930,6 +948,16 @@ export function getHtmlBundle(): string {
         html += '<div class="option-label">' + escapeHtml(opt.label) + '</div>';
         if (opt.description) html += '<div class="option-desc">' + escapeHtml(opt.description) + '</div>';
         html += '</div></label>';
+      }
+      if (allowOther) {
+        html += '<label class="option">';
+        html += '<input type="checkbox" name="pick_' + q.id + '" value="__other__" onchange="toggleOtherInput(\\'' + q.id + '\\', this.checked)">';
+        html += '<div class="option-content">';
+        html += '<div class="option-label">Other...</div>';
+        html += '</div></label>';
+        html += '<div id="other_' + q.id + '" style="display:none; margin-top:0.5rem;">';
+        html += '<input type="text" id="other_text_' + q.id + '" class="input" placeholder="Enter your answer...">';
+        html += '</div>';
       }
       html += '</div>';
       html += '<div class="btn-group"><button onclick="submitPickMany(\\'' + q.id + '\\')" class="btn btn-primary">Submit</button></div>';
@@ -1199,12 +1227,45 @@ export function getHtmlBundle(): string {
         showError(questionId, 'Please select an option');
         return;
       }
-      submitAnswer(questionId, { selected: selected.value });
+      if (selected.value === '__other__') {
+        const otherInput = document.getElementById('other_text_' + questionId);
+        const otherValue = otherInput ? otherInput.value.trim() : '';
+        if (!otherValue) {
+          showError(questionId, 'Please enter your answer');
+          return;
+        }
+        submitAnswer(questionId, { selected: '__other__', other: otherValue });
+      } else {
+        submitAnswer(questionId, { selected: selected.value });
+      }
     }
     
     function submitPickMany(questionId) {
-      const selected = Array.from(document.querySelectorAll('input[name="pick_' + questionId + '"]:checked')).map(el => el.value);
-      submitAnswer(questionId, { selected });
+      const checkboxes = document.querySelectorAll('input[name="pick_' + questionId + '"]:checked');
+      const selected = Array.from(checkboxes).map(el => el.value);
+      const hasOther = selected.includes('__other__');
+      let otherValue = null;
+      if (hasOther) {
+        const otherInput = document.getElementById('other_text_' + questionId);
+        otherValue = otherInput ? otherInput.value.trim() : '';
+        if (!otherValue) {
+          showError(questionId, 'Please enter your other answer');
+          return;
+        }
+      }
+      const filteredSelected = selected.filter(v => v !== '__other__');
+      submitAnswer(questionId, { selected: filteredSelected, other: hasOther ? otherValue : undefined });
+    }
+    
+    function toggleOtherInput(questionId, show) {
+      const otherDiv = document.getElementById('other_' + questionId);
+      if (otherDiv) {
+        otherDiv.style.display = show ? 'block' : 'none';
+        if (show) {
+          const input = document.getElementById('other_text_' + questionId);
+          if (input) input.focus();
+        }
+      }
     }
     
     function submitText(questionId) {
@@ -1368,6 +1429,17 @@ export function getHtmlBundle(): string {
       render();
     }
     
+    function reopenQuestion(questionId) {
+      const q = questions.find(q => q.id === questionId);
+      if (q && q.answered) {
+        q.answered = false;
+        q.answer = undefined;
+        expandedAnswers.delete(questionId);
+        ws.send(JSON.stringify({ type: 'reopen_request', id: questionId }));
+        render();
+      }
+    }
+    
     function renderAnsweredQuestion(q) {
       const config = q.config;
       const answer = q.answer || {};
@@ -1435,6 +1507,12 @@ export function getHtmlBundle(): string {
         html += '<span>' + escapeHtml(opt.label) + '</span>';
         html += '</div>';
       }
+      if (answer.selected === '__other__' && answer.other) {
+        html += '<div class="readonly-option selected">';
+        html += '<span class="check-mark">✓</span>';
+        html += '<span><em>Other:</em> ' + escapeHtml(answer.other) + '</span>';
+        html += '</div>';
+      }
       html += '</div>';
       return html;
     }
@@ -1448,6 +1526,12 @@ export function getHtmlBundle(): string {
         html += '<div class="readonly-option' + (isSelected ? ' selected' : '') + '">';
         if (isSelected) html += '<span class="check-mark">✓</span>';
         html += '<span>' + escapeHtml(opt.label) + '</span>';
+        html += '</div>';
+      }
+      if (answer.other) {
+        html += '<div class="readonly-option selected">';
+        html += '<span class="check-mark">✓</span>';
+        html += '<span><em>Other:</em> ' + escapeHtml(answer.other) + '</span>';
         html += '</div>';
       }
       html += '</div>';

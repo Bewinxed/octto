@@ -271,6 +271,7 @@ export const WS_MESSAGES = {
   CANCEL: "cancel",
   END: "end",
   RESPONSE: "response",
+  REOPEN: "reopen",
   CONNECTED: "connected",
 } as const;
 
@@ -290,6 +291,11 @@ export interface WsEndMessage {
   type: "end";
 }
 
+export interface WsReopenMessage {
+  type: "reopen";
+  id: string;
+}
+
 export interface WsResponseMessage {
   type: "response";
   id: string;
@@ -300,5 +306,10 @@ export interface WsConnectedMessage {
   type: "connected";
 }
 
-export type WsServerMessage = WsQuestionMessage | WsCancelMessage | WsEndMessage;
-export type WsClientMessage = WsResponseMessage | WsConnectedMessage;
+export interface WsReopenRequestMessage {
+  type: "reopen_request";
+  id: string;
+}
+
+export type WsServerMessage = WsQuestionMessage | WsCancelMessage | WsEndMessage | WsReopenMessage;
+export type WsClientMessage = WsResponseMessage | WsConnectedMessage | WsReopenRequestMessage;

@@ -40,6 +40,7 @@ export interface SessionStore {
   getAnswer: (input: GetAnswerInput) => Promise<GetAnswerOutput>;
   getNextAnswer: (input: GetNextAnswerInput) => Promise<GetNextAnswerOutput>;
   cancelQuestion: (questionId: string) => { ok: boolean };
+  reopenQuestion: (questionId: string) => { ok: boolean };
   listQuestions: (sessionId?: string) => ListQuestionsOutput;
   handleWsConnect: (sessionId: string, ws: ServerWebSocket<unknown>) => void;
   handleWsDisconnect: (sessionId: string) => void;
@@ -294,6 +295,40 @@ export function createSessionStore(options: SessionStoreOptions = {}): SessionSt
       return { ok: true };
     },
 
+    reopenQuestion(questionId: string): { ok: boolean } {
+      const sessionId = questionToSession.get(questionId);
+      if (!sessionId) {
+        return { ok: false };
+      }
+
+      const session = sessions.get(sessionId);
+      if (!session) {
+        return { ok: false };
+      }
+
+      const question = session.questions.get(questionId);
+      if (!question || question.status !== STATUSES.ANSWERED) {
+        return { ok: false };
+      }
+
+      question.status = STATUSES.PENDING;
+      question.answeredAt = undefined;
+      question.response = undefined;
+      question.retrieved = false;
+
+      if (session.wsConnected && session.wsClient) {
+        const msg: WsServerMessage = {
+          type: WS_MESSAGES.QUESTION,
+          id: questionId,
+          questionType: question.type,
+          config: question.config,
+        };
+        session.wsClient.send(JSON.stringify(msg));
+      }
+
+      return { ok: true };
+    },
+
     listQuestions(sessionId?: string): ListQuestionsOutput {
       const questions: ListQuestionsOutput["questions"] = [];
 
@@ -347,6 +382,11 @@ export function createSessionStore(options: SessionStoreOptions = {}): SessionSt
 
     handleWsMessage(sessionId: string, message: WsClientMessage): void {
       if (message.type === WS_MESSAGES.CONNECTED) {
+        return;
+      }
+
+      if (message.type === "reopen_request") {
+        store.reopenQuestion(message.id);
         return;
       }
 
